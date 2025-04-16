@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <style>
+            .login-form {
+                margin-left: auto;
+                margin-right: auto;
+                max-width: 450px;
+                background-color: #17203D;
+                border: 4px #000000;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            .text_color {
+                color: #6552D0;
+            }
+            .text_color_2 {
+                color: #F7F6F7;
+            }
+        </style>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>Регистрация</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" 
+            rel="stylesheet" 
+            integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" 
+            crossorigin="anonymous">
+    </head>
+    <body>
+        <div style="text-align: center;">
+            <h1>Зарегестрируйтесь</h1>
+        </div>
+        <form action="" method="post" class="login-form">
+            {{ form.hidden_tag() }}
+            <p class="text_color">
+                {{ form.email.label }}
+                {{ form.email(class="form-control", type="email") }}
+                {% for error in form.email.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p class="text_color_2">{{ error }}</p>
+                    </div>
+                {% endfor %}
+            </p>
+            <p class="text_color">
+                {{ form.password1.label }}
+                {{ form.password1(class="form-control", type="password") }}
+                {% for error in form.password1.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p class="text_color_2">{{ error }}</p>
+                    </div>
+                {% endfor %}
+            </p>
+            <p class="text_color">
+                {{ form.password2.label }}
+                {{ form.password2(class="form-control", type="password") }}
+                {% for error in form.password2.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p class="text_color_2">{{ error }}</p>
+                    </div>
+                {% endfor %}
+            </p>
+            <p class="text_color">
+                {{ form.name.label }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p class="text_color_2">{{ error }}</p>
+                    </div>
+                {% endfor %}
+            </p>
+            <p class="text_color">
+                {{ form.user_name.label }}
+                {{ form.user_name(class="form-control") }}
+                {% for error in form.user_name.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <p class="text_color_2">{{ error }}</p>
+                    </div>
+                {% endfor %}
+            </p>
+            <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+            <p class="text_color">{{message}}</p>
+        </form>
+    </body>
+</html>
