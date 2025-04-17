@@ -12,6 +12,7 @@ class SignUpForm(FlaskForm):  # SignUp - зарегаться, твоего ак
     submit = SubmitField('Зарегестрироваться')
 
 
+
 class SignInForm(FlaskForm):  # SignIn - войти, когда ты уже есть в базе данных
     email = EmailField('Почта', validators=[DataRequired()])
     password = PasswordField('Пароль', validators=[DataRequired()])

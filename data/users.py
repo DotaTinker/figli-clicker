@@ -2,9 +2,10 @@ import datetime
 import sqlalchemy
 from data.db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
 
-class User(SqlAlchemyBase):
+class User(SqlAlchemyBase, UserMixin):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
@@ -14,6 +15,7 @@ class User(SqlAlchemyBase):
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     figli_coins = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
     modified_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
+    is_admin = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
 
     def __repr__(self):
         return (f"""{self.id}, {self.name}, {self.user_name}, {self.email}, {self.password}, 
@@ -24,3 +26,10 @@ class User(SqlAlchemyBase):
 
     def check_password(self, password):
         return check_password_hash(self.hashed_password, password)
+
+    def get_id(self):
+        return str(self.id)
+
+    @property
+    def is_active(self):
+        return True

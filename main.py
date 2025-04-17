@@ -32,15 +32,14 @@ def signup():
         if form.password1.data != form.password2.data:
             return render_template('signup.html', form=form, message="Пароли не совпадают")
 
-        db_session.global_init("db/blogs.db")
         db_sess = db_session.create_session()
 
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('signup.html', form=form, message="Такой пользователь уже есть")
 
         user = User(name=form.name.data,
-            user_name=form.name.data,
-            email=form.email.data)
+                    user_name=form.name.data,
+                    email=form.email.data)
         user.set_password(form.password1.data)
         db_sess.add(user)
         db_sess.commit()
@@ -54,8 +53,8 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-@app.route('/')
 @app.route('/index')
+@app.route('/')
 def index():
     return render_template("base.html")
 
@@ -67,5 +66,12 @@ def logout():
     return redirect("/")
 
 
+@app.route("/nftmanage")
+def nftmanage():
+    render_template("nftmanage")
+
+
 if __name__ == '__main__':
+    db_session.global_init("db/blogs.db")
     app.run(port=8080, host='127.0.0.1')
+
