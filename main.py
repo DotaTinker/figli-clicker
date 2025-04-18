@@ -1,13 +1,29 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, flash, request
 from data import db_session
 from data.users import User
-from flask_login import LoginManager, login_user, login_required, logout_user
+from data.nftdb import Collection, NFT
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from forms.user_forms import SignUpForm, SignInForm
+import functools
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+UPLOAD_FOLDER = 'uploads'  # Папка для сохранения загруженных изображений
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+def admin_required(f):  # декоратор недопускающий людей без прав администратора
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash("У вас нет прав для доступа к этой странице.", "danger")
+            return redirect("/")
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 @app.route('/signin', methods=['GET', 'POST'])
@@ -55,6 +71,7 @@ def load_user(user_id):
 
 @app.route('/index')
 @app.route('/')
+@login_required
 def index():
     return render_template("base.html")
 
@@ -67,11 +84,20 @@ def logout():
 
 
 @app.route("/nftmanage")
+@login_required
+@admin_required
 def nftmanage():
-    render_template("nftmanage")
+    return render_template("nftmanage.html")
+
+
+@login_required
+@admin_required
+@app.route('/add-collections', methods=['GET', 'POST'])
+def add_collections():
+    return render_template('add-collections.html')
 
 
 if __name__ == '__main__':
-    db_session.global_init("db/blogs.db")
+    db_session.global_init("db/users.db")
+    db_session.global_init("db/nft_collections.db")
     app.run(port=8080, host='127.0.0.1')
-

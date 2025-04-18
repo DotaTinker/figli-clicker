@@ -1,10 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+<div class="container text-center" style="margin-top: 50px;">
+    <h1>Управление коллекциями NFT</h1>
+    <div class="btn-group" role="group" aria-label="Basic example">
+        <a href="/edit-collections" class="btn btn-primary">Изменить текущие коллекции</a>
+        <a href="/add-collections" class="btn btn-secondary">Добавить новые коллекции</a>
+    </div>
+</div>
+{% endblock %}
