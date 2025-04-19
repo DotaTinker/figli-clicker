@@ -6,48 +6,48 @@
     <title>Добавить коллекцию</title>
 </head>
 <body>
-    <h1>Добавить коллекцию</h1>
-    <form action="/add-collections" method="post" enctype="multipart/form-data">
+    <h1>Добавить коллекцию NFT</h1>
+    <form action="/add-collections" method="POST" enctype="multipart/form-data">
         <label for="collection_name">Название коллекции:</label>
-        <input type="text" id="collection_name" name="collection_name" required><br><br>
+        <input type="text" id="collection_name" name="collection_name" required><br>
 
-        <label for="collection_image">Аватарка коллекции:</label>
-        <input type="file" id="collection_image" name="collection_image" accept="image/*" required><br><br>
+        <label for="collection_image">Изображение коллекции:</label>
+        <input type="file" id="collection_image" name="collection_image" accept="image/*" required><br>
 
         <h2>Добавить NFT</h2>
         <div id="nft-container">
             <div class="nft-item">
-                <label for="nft_name">Название NFT:</label>
-                <input type="text" name="nft_name[]" required>
+                <label for="nft_name">Имя NFT:</label>
+                <input type="text" name="nft_name[]" required><br>
 
                 <label for="nft_rarity">Редкость:</label>
-                <input type="text" name="nft_rarity[]" required>
+                <input type="text" name="nft_rarity[]" required><br>
 
-                <label for="nft_image">Картинка NFT:</label>
-                <input type="file" name="nft_image[]" accept="image/*" required><br><br>
+                <label for="nft_image">Изображение NFT:</label>
+                <input type="file" name="nft_image[]" accept="image/*" required><br>
             </div>
         </div>
 
         <button type="button" onclick="addNft()">Добавить еще NFT</button><br><br>
 
-        <input type="submit" value="Сохранить коллекцию">
+        <button type="submit">Добавить коллекцию</button>
     </form>
 
     <script>
         function addNft() {
             const container = document.getElementById('nft-container');
-            const newNftItem = document.createElement('div');
-            newNftItem.classList.add('nft-item');
-            newNftItem.innerHTML = `
-                <label for="">Название NFT:</label>
-                <input type="text" name="nft_name[]" required>
+            const newNft = document.createElement('div');
+            newNft.classList.add('nft-item');
+            newNft.innerHTML = `
+                <label for="nft_name">Имя NFT:</label>
+                <input type="text" name="nft_name[]" required><br>
 
-                <label for="">Редкость:</label>
-                <input type="text" name="nft_rarity[]" required>
+                <label for="nft_rarity">Редкость:</label>
+                <input type="text" name="nft_rarity[]" required><br>
 
-                <label for="">Картинка NFT:</label>
-                <input type="file" name="nft_image[]" accept="image/*" required><br><br>`;
-            container.appendChild(newNftItem);
+                <label for="nft_image">Изображение NFT:</label>
+                <input type="file" name="nft_image[]" accept="image/*" required><br>`;
+            container.appendChild(newNft);
         }
     </script>
 </body>

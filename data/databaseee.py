@@ -3,6 +3,7 @@ import sqlalchemy
 from data.db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from sqlalchemy.orm import relationship
 
 
 class User(SqlAlchemyBase, UserMixin):
@@ -33,3 +34,23 @@ class User(SqlAlchemyBase, UserMixin):
     @property
     def is_active(self):
         return True
+
+
+class Collection(SqlAlchemyBase):
+    __tablename__ = 'collections'
+
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
+    name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    image_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    nfts = relationship("NFT", back_populates="collection")
+
+
+class NFT(SqlAlchemyBase):
+    __tablename__ = 'nfts'
+
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
+    name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    rarity = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    image_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    collection_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('collections.id'))
+    collection = relationship("Collection", back_populates="nfts")

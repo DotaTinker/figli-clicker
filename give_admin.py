@@ -1,5 +1,5 @@
 from data import db_session
-from data.users import User
+from data.databaseee import User
 
 
 def make_user_admin(user_id):
@@ -16,7 +16,7 @@ def make_user_admin(user_id):
 
 
 if __name__ == "__main__":
-    db_session.global_init("db/users.db")
+    db_session.global_init("db/databasee.db")
 
     user_id = input("Введите ID пользователя, которому нужно предоставить права администратора: ")
 

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField, EmailField, BooleanField
+from wtforms import PasswordField, StringField, SubmitField, EmailField, BooleanField, FileField, SelectField
 from wtforms.validators import DataRequired
 
 
@@ -10,7 +10,6 @@ class SignUpForm(FlaskForm):  # SignUp - зарегаться, твоего ак
     name = StringField('Придумайте ваше имя: ', validators=[DataRequired()])
     user_name = StringField('Имя пользователя: ', validators=[DataRequired()])
     submit = SubmitField('Зарегестрироваться')
-
 
 
 class SignInForm(FlaskForm):  # SignIn - войти, когда ты уже есть в базе данных

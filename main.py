@@ -1,11 +1,12 @@
 from flask import Flask, render_template, redirect, flash, request
 from data import db_session
-from data.users import User
-from data.nftdb import Collection, NFT
+from data.databaseee import User, Collection, NFT
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from forms.user_forms import SignUpForm, SignInForm
+from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
 import os
+from werkzeug.utils import secure_filename
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -90,14 +91,43 @@ def nftmanage():
     return render_template("nftmanage.html")
 
 
+@app.route('/add-collections', methods=['GET', 'POST'])
 @login_required
 @admin_required
-@app.route('/add-collections', methods=['GET', 'POST'])
 def add_collections():
+    if request.method == 'POST':
+        collection_name = request.form['collection_name']
+
+        # Сохранение изображения коллекции
+        collection_image = request.files['collection_image']
+        collection_image_path = os.path.join(UPLOAD_FOLDER, secure_filename(collection_image.filename))
+        collection_image.save(collection_image_path)
+
+        # Создание новой коллекции
+        db_sess = db_session.create_session()
+        collection = Collection(name=collection_name, image_path=collection_image_path)
+
+        # Добавление NFT
+        nft_names = request.form.getlist('nft_name[]')
+        nft_rarities = request.form.getlist('nft_rarity[]')
+        nft_images = request.files.getlist('nft_image[]')
+
+        for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
+            nft_image_path = os.path.join(UPLOAD_FOLDER, secure_filename(nft_image.filename))
+            nft_image.save(nft_image_path)
+
+            nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_image_path)
+            collection.nfts.append(nft)
+
+        db_sess.add(collection)
+        db_sess.commit()
+
+        flash("Коллекция успешно добавлена!", "success")
+        return redirect('/')
+
     return render_template('add-collections.html')
 
 
 if __name__ == '__main__':
-    db_session.global_init("db/users.db")
-    db_session.global_init("db/nft_collections.db")
+    db_session.global_init("db/databasee.db")
     app.run(port=8080, host='127.0.0.1')
