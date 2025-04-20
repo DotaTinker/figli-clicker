@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Список коллекций NFT</h1>
+    <div class="collection-list">
+        {% for collection in collections %}
+            <div class="collection-item">
+                <a href="{{ url_for('clicker', collection_id=collection.id) }}" class="collection-button">
+                    <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" class="collection-image">
+                    <span class="collection-name">{{ collection.name }}</span>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

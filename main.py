@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, flash, request
+from flask import Flask, render_template, redirect, flash, request, send_from_directory
 from data import db_session
 from data.databaseee import User, Collection, NFT
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -6,7 +6,6 @@ from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
 import os
 from werkzeug.utils import secure_filename
-
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -25,6 +24,11 @@ def admin_required(f):  # декоратор недопускающий люде
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 
 @app.route('/signin', methods=['GET', 'POST'])
@@ -74,7 +78,15 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    return render_template("base.html")
+    db_sess = db_session.create_session()
+    collections = db_sess.query(Collection).all()
+    return render_template('home.html', collections=collections)
+
+
+@app.route('/clicker/<int:collection_id>')
+def clicker(collection_id):
+    # Здесь будет логика для обработки нажатия на коллекцию
+    return f'Вы нажали на коллекцию с ID: {collection_id}'
 
 
 @app.route('/logout')
@@ -100,30 +112,39 @@ def add_collections():
 
         # Сохранение изображения коллекции
         collection_image = request.files['collection_image']
-        collection_image_path = os.path.join(UPLOAD_FOLDER, secure_filename(collection_image.filename))
-        collection_image.save(collection_image_path)
+        collection_image_filename = secure_filename(collection_image.filename)
+        collection_image_path = os.path.join(UPLOAD_FOLDER, collection_image_filename)
 
-        # Создание новой коллекции
-        db_sess = db_session.create_session()
-        collection = Collection(name=collection_name, image_path=collection_image_path)
+        try:
+            collection_image.save(collection_image_path)
 
-        # Добавление NFT
-        nft_names = request.form.getlist('nft_name[]')
-        nft_rarities = request.form.getlist('nft_rarity[]')
-        nft_images = request.files.getlist('nft_image[]')
+            # Создание новой коллекции с именем файла
+            db_sess = db_session.create_session()
+            collection = Collection(name=collection_name, image_path=collection_image_filename)
 
-        for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
-            nft_image_path = os.path.join(UPLOAD_FOLDER, secure_filename(nft_image.filename))
-            nft_image.save(nft_image_path)
+            # Добавление NFT
+            nft_names = request.form.getlist('nft_name[]')
+            nft_rarities = request.form.getlist('nft_rarity[]')
+            nft_images = request.files.getlist('nft_image[]')
 
-            nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_image_path)
-            collection.nfts.append(nft)
+            for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
+                nft_image_filename = secure_filename(nft_image.filename)
+                nft_image_path = os.path.join(UPLOAD_FOLDER, nft_image_filename)
+                nft_image.save(nft_image_path)
 
-        db_sess.add(collection)
-        db_sess.commit()
+                # Создание NFT с именем файла
+                nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_image_filename)
+                collection.nfts.append(nft)
 
-        flash("Коллекция успешно добавлена!", "success")
-        return redirect('/')
+            db_sess.add(collection)
+            db_sess.commit()
+
+            flash("Коллекция успешно добавлена!", "success")
+            return redirect('/')
+
+        except Exception as e:
+            flash(f"Произошла ошибка: {str(e)}", "danger")
+            return redirect('/add-collections')
 
     return render_template('add-collections.html')
 
