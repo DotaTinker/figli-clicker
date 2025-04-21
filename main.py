@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, flash, request, send_from_directory
+from flask import Flask, render_template, redirect, flash, request, send_from_directory, jsonify
 from data import db_session
 from data.databaseee import User, Collection, NFT
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -84,9 +84,27 @@ def index():
 
 
 @app.route('/clicker/<int:collection_id>')
+@login_required
 def clicker(collection_id):
     # Здесь будет логика для обработки нажатия на коллекцию
     return f'Вы нажали на коллекцию с ID: {collection_id}'
+
+
+@login_required
+@app.route('/mining', methods=['GET', 'POST'])
+def mining():
+    db_sess = db_session.create_session()
+
+    if request.method == "POST":
+
+        current_user.figli_coins += 1
+
+        db_sess.merge(current_user)
+        db_sess.commit()
+
+        return jsonify({'coins': current_user.figli_coins})
+
+    return render_template('mining.html', coins=current_user.figli_coins)
 
 
 @app.route('/logout')

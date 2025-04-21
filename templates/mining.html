@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  body, html {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+  }
+  .mining-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+  }
+  .start-button {
+      padding: 20px 40px;
+      font-size: 24px;
+      border-radius: 12px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+  }
+  .start-button:hover {
+      background-color: #0056b3;
+  }
+  .coins-display {
+      margin-top: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+  }
+</style>
+
+<div class="mining-container">
+    <!-- Добавляем изображение -->
+    <img src="{{ url_for('static', filename='figli_logo.img') }}" alt="Figli Logo" style="max-width: 200px; margin-bottom: 20px;">
+    
+    <button id="startMining" class="start-button">Старт</button>
+    <div class="coins-display">Монеты: <span id="coinsCount">{{ coins }}</span></div>
+</div>
+
+<script>
+    const startBtn = document.getElementById('startMining');
+    const coinsCountSpan = document.getElementById('coinsCount');
+    let miningInterval = null;
+
+    function simulateMining() {
+    const dataSize = 10000000; // Увеличиваем размер массива до 10 миллионов
+    const data = new Array(dataSize).fill(0).map(() => Math.random());
+
+    let sumOfSquares = 0;
+
+    for (let i = 0; i < data.length; i++) {
+        sumOfSquares += Math.pow(data[i], 2); // Суммируем квадраты значений
+    }
+
+    let factorialSum = 0;
+
+    for (let j = 1; j <= 20; j++) { // Вычисляем факториалы до 20
+        factorialSum += factorial(j);
+    }
+
+    return sumOfSquares + factorialSum; // Возвращаем сумму квадратов и факториалов
+}
+
+function factorial(n) {
+    if (n === 0 || n === 1) return 1;
+
+    let result = 1;
+
+    for (let i = 2; i <= n; i++) {
+        result *= i;
+    }
+
+    return result;
+}
+
+    startBtn.addEventListener('click', () => {
+        if (miningInterval) {
+            clearInterval(miningInterval);
+            miningInterval = null;
+            startBtn.textContent = 'Старт';
+        } else {
+            startBtn.textContent = 'Стоп';
+
+            miningInterval = setInterval(() => {
+                // Выполняем имитацию вычислений
+                simulateMining();
+
+                // Отправляем запрос на сервер
+                fetch('{{ url_for("mining") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() if csrf_token is defined else "" }}'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    coinsCountSpan.textContent = data.coins; // Обновляем количество монет на странице
+                })
+                .catch(err => console.error('Ошибка при майнинге:', err));
+            }, 3000); // каждые 3 секунды добавляем монеты
+        }
+    });
+</script>
+{% endblock %}
