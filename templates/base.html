@@ -19,13 +19,18 @@
             <a class="navbar-brand" href="/">Домик</a>
             <a class="navbar-brand" href="/mining">Монетка</a>
             <a class="navbar-brand" href="/market">Рынок</a>
-            <a class="navbar-brand" href="/profile">Профиль</a>
-
+            {% if current_user.is_authenticated %}
+                <a class="navbar-brand" href="/profile/{{ current_user.user_name }}">Профиль</a>
+                <a class="navbar-brand" href="/logout">Выйти</a>
+            {% else %}
+                <a class="navbar-brand" href="/signin">Войти</a>
+                <a class="navbar-brand" href="/signup">Зарегестрироваться</a>
+            {% endif %}
         </div>
     </div>
 </nav>
 
-<div class="container mt-4">
+<div>
     {% block content %}
     {% endblock %}
 </div>

@@ -6,11 +6,30 @@ from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
 import os
 from werkzeug.utils import secure_filename
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
-UPLOAD_FOLDER = 'uploads'  # Папка для сохранения загруженных изображений
+UPLOAD_FOLDER = 'uploads'  # Папка для сохранения изображений нфт
+# /uploads
+#   /имя коллекции
+#     имя коллекции.png
+#     /nfts
+#       имя нфт.png
+#       ...
+#   ...
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+USERS_JSONS = 'users_jsons'  # Папка для сохранения json-файлов о пользователях
+# наименование json'а - почта пользователя (Amogus@amogus.json)
+# json хранит информацию о том, какие nft (тоесть их id) есть у пользователя
+# {"имя коллекции":
+#     {"имя nft": колличество,
+#     "имя nft": колличество,
+#     ...},
+# ...}
+os.makedirs(USERS_JSONS, exist_ok=True)
+USERS_PHOTOS = 'users_photos'  # Папка для сохранения изображений профиля пользователей, имя - почта
+os.makedirs(USERS_PHOTOS, exist_ok=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -53,6 +72,10 @@ def signup():
         if form.password1.data != form.password2.data:
             return render_template('signup.html', form=form, message="Пароли не совпадают")
 
+        for el in r"""\|/:*?"<>""":
+            if el in form.email.data:
+                return render_template('signup.html', form=form, message=r"""Нельзя в emeil юзать \|/:*?"<>""")
+
         db_sess = db_session.create_session()
 
         if db_sess.query(User).filter(User.email == form.email.data).first():
@@ -64,6 +87,10 @@ def signup():
         user.set_password(form.password1.data)
         db_sess.add(user)
         db_sess.commit()
+
+        with open(f"./users_jsons/{form.email.data}.json", "w") as new_user_json:
+            json.dump({}, new_user_json)
+
         return redirect('/signin')
     return render_template('signup.html', form=form)
 
@@ -76,7 +103,6 @@ def load_user(user_id):
 
 @app.route('/index')
 @app.route('/')
-@login_required
 def index():
     db_sess = db_session.create_session()
     collections = db_sess.query(Collection).all()
@@ -165,6 +191,17 @@ def add_collections():
             return redirect('/add-collections')
 
     return render_template('add-collections.html')
+
+
+@app.route("/profile/<string:user_name>", methods=["GET", "POST"])
+@login_required
+def profile(user_name):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.user_name == user_name).first()
+    if user:
+        with open(f"/users_jsons/{user.email}.json") as user_json:
+            return render_template("profile.html",
+                                   User=user, json=json.load(user_json))
 
 
 if __name__ == '__main__':
