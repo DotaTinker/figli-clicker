@@ -9,17 +9,11 @@
         <p>Нмя пользователя: {{ User.user_name }}</p>
         <p>figli-коины: {{ User.figli_coins }}</p>
         <p>email: {{ User.email }}</p>
-        
-    </div>
-    <div class="container">
-        {% set q = [] %}
         {% for collection, nfts in json.items() %}
             {% for name, number in nfts.items() %}
-                {% q.append([name, number, collection]) %}
+                <p>{{collection}} {{name}} {{number}}</p>
             {% endfor %}
         {% endfor %}
-        {% for el in q%}
-            <p>{{el}}</p>
-        {% endfor %}
+        
     </div>
 {% endblock %}

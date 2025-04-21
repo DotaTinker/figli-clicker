@@ -199,7 +199,7 @@ def profile(user_name):
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.user_name == user_name).first()
     if user:
-        with open(f"/users_jsons/{user.email}.json") as user_json:
+        with open(f"./users_jsons/{user.email}.json") as user_json:
             return render_template("profile.html",
                                    User=user, json=json.load(user_json))
 
