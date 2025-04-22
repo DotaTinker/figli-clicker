@@ -49,7 +49,7 @@ def admin_required(f):  # декоратор недопускающий люде
     return decorated_function
 
 
-@app.route('/collections_and_nfts/<path:filename>')
+@app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(COLL_AND_NFTS_FOLDER, filename)
 
