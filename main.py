@@ -7,10 +7,14 @@ import functools
 import os
 from werkzeug.utils import secure_filename
 import json
+from PIL import Image
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
-UPLOAD_FOLDER = 'uploads'  # Папка для сохранения изображений нфт
+
+COLLECTION_a = 100
+NFT_a = 100
+COLL_AND_NFTS_FOLDER = 'collections_and_nfts'  # Папка для сохранения изображений нфт
 # /uploads
 #   /имя коллекции
 #     имя коллекции.png
@@ -18,7 +22,7 @@ UPLOAD_FOLDER = 'uploads'  # Папка для сохранения изобра
 #       имя нфт.png
 #       ...
 #   ...
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(COLL_AND_NFTS_FOLDER, exist_ok=True)
 USERS_JSONS = 'users_jsons'  # Папка для сохранения json-файлов о пользователях
 # наименование json'а - почта пользователя (Amogus@amogus.json)
 # json хранит информацию о том, какие nft (тоесть их id) есть у пользователя
@@ -47,7 +51,7 @@ def admin_required(f):  # декоратор недопускающий люде
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+    return send_from_directory(COLL_AND_NFTS_FOLDER, filename)
 
 
 @app.route('/signin', methods=['GET', 'POST'])
@@ -152,19 +156,40 @@ def nftmanage():
 @admin_required
 def add_collections():
     if request.method == 'POST':
-        collection_name = request.form['collection_name']
+        collection_name = request.form['collection_name'] # имя
+        collection_image = request.files['collection_image'] # файл
 
-        # Сохранение изображения коллекции
-        collection_image = request.files['collection_image']
-        collection_image_filename = secure_filename(collection_image.filename)
-        collection_image_path = os.path.join(UPLOAD_FOLDER, collection_image_filename)
+        extension = ''
+        for el in secure_filename(collection_image.filename)[::-1]:
+            extension += el
+            if el == '.':
+                extension = extension[::-1]
+                break
+        # здесь получил расширение файла
+
+        db_sess = db_session.create_session()
+        id = str(db_sess.query(Collection).order_by(Collection.id.desc()).first() + 1) # сформировал id коллекции
 
         try:
-            collection_image.save(collection_image_path)
+            folder_name = os.path.join(COLL_AND_NFTS_FOLDER, id)
+            file_name = f"{id}{extension}"
+            os.mkdir(folder_name)
+            collection_image.save(os.path.join(folder_name, file_name))
+            collection_image = Image.open(os.path.join(folder_name, file_name))
+            # изменение размеров картинки до соотношения сторон 1:1, соотношение чётное, например 100:100
 
+            width, height = collection_image.size
+            collection_image = collection_image.crop((0, 0, width // 2, height // 2))
+            if width != height:
+                if width > height:
+                    collection_image = collection_image.crop((0, 0, height, height))
+                else:
+                    collection_image = collection_image.crop((0, 0, width, width))
+            collection_image = collection_image.resize((COLLECTION_a, COLLECTION_a))
+            collection_image.save(os.path.join(folder_name, file_name))
             # Создание новой коллекции с именем файла
-            db_sess = db_session.create_session()
-            collection = Collection(name=collection_name, image_path=collection_image_filename)
+
+            collection = Collection(name=collection_name, image_path=os.path.join(folder_name, file_name))
 
             # Добавление NFT
             nft_names = request.form.getlist('nft_name[]')
@@ -173,7 +198,7 @@ def add_collections():
 
             for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
                 nft_image_filename = secure_filename(nft_image.filename)
-                nft_image_path = os.path.join(UPLOAD_FOLDER, nft_image_filename)
+                nft_image_path = os.path.join(COLL_AND_NFTS_FOLDER, nft_image_filename)
                 nft_image.save(nft_image_path)
 
                 # Создание NFT с именем файла
