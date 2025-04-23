@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker</title>
+</head>
+<body>
+    <div style="text-align:center;">
+        <h1>{{ collection.name }}</h1>
+        <form method="POST">
+            <button type="submit" style="border:none; background:none;">
+                <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" style="width:300px; height:auto;">
+            </button>
+        </form>
+        <h2>Счетчик нажатий: {{ current_user.click_count }}</h2> <!-- Предполагается наличие поля click_count у пользователя -->
+    </div>
+</body>
+</html>

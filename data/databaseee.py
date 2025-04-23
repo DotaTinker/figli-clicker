@@ -19,6 +19,7 @@ class User(SqlAlchemyBase, UserMixin):
     figli_coins = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
     modified_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
     is_admin = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
+    click_count = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
 
     def __repr__(self):
         return (f"""{self.id}, {self.name}, {self.user_name}, {self.email}, {self.hashed_password}, 
