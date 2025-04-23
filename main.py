@@ -170,11 +170,10 @@ def add_collections():
 
         try:
             folder_name = os.path.join(COLL_AND_NFTS_FOLDER, new_collection_id)
-            os.makedirs(folder_name)  # Создаем папку для новой коллекции
+            os.mkdir(folder_name)  # Создаем папку для новой коллекции
 
-            file_name = f"{new_collection_id}.{extension}"
+            file_name = f"{new_collection_id}{extension}"
             collection_image_path = os.path.join(folder_name, file_name)
-            print(collection_image_path)
             collection_image.save(collection_image_path)
 
             # Изменение размеров картинки до соотношения сторон 1:1
@@ -197,15 +196,20 @@ def add_collections():
             nft_rarities = request.form.getlist('nft_rarity[]')
             nft_images = request.files.getlist('nft_image[]')
 
+            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
             for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
-                nft_extension = secure_filename(nft_image.filename).rsplit('.', 1)[-1]
+                nft_extension = ''
+                for el in secure_filename(nft_image.filename)[::-1]:
+                    nft_extension+= el
+                    if el == '.':
+                        nft_extension = nft_extension[::-1]
+                        break
                 nft_folder_path = os.path.join(folder_name, 'nfts')
                 os.makedirs(nft_folder_path, exist_ok=True)  # Создаем папку для NFT
 
-                new_nft_id = str(db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1)
-                nft_file_name = f"{new_nft_id}.{nft_extension}"
+                new_nft_id = str(default_nft_id)
+                nft_file_name = f"{new_nft_id}{nft_extension}"
                 nft_image_path = os.path.join(nft_folder_path, nft_file_name)
-                print(nft_image_path)
                 nft_image.save(nft_image_path)
 
                 nft_image = Image.open(nft_image_path)
@@ -216,12 +220,13 @@ def add_collections():
                     min_side -= min_side % 2
                     nft_image = nft_image.crop((0, 0, min_side, min_side))
 
-                nft_image = collection_image.resize((NFT_a, NFT_a))
+                nft_image = nft_image.resize((NFT_a, NFT_a))
                 nft_image.save(nft_image_path)
 
                 # Создание NFT с именем файла
                 nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_image_path)
                 collection.nfts.append(nft)
+                default_nft_id += 1
 
             db_sess.add(collection)
             db_sess.commit()
