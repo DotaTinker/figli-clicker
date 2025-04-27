@@ -246,6 +246,7 @@ def add_collections():
 
             file_name = f"{new_collection_id}{extension}"
             collection_image_path = os.path.join(folder_name, file_name)
+            collection_image_path_bd = f"{new_collection_id}/{file_name}"
             collection_image.save(collection_image_path)
 
             # Изменение размеров картинки до соотношения сторон 1:1
@@ -261,7 +262,7 @@ def add_collections():
             collection_image.save(collection_image_path)
 
             # Создание новой коллекции с именем файла
-            collection = Collection(name=collection_name, image_path=collection_image_path)
+            collection = Collection(name=collection_name, image_path=collection_image_path_bd)
 
             # Добавление NFT
             nft_names = request.form.getlist('nft_name[]')
