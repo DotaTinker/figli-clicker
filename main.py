@@ -95,6 +95,8 @@ def signup():
 
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('signup.html', form=form, message="Такой пользователь уже есть")
+        if db_sess.query(User).filter(User.user_name == form.user_name.data).first():
+            return render_template('signup.html', form=form, message="Такой пользователь уже есть")
 
         data = {
             'name': request.form.get('name'),
