@@ -9,9 +9,16 @@ from werkzeug.utils import secure_filename
 import json
 from PIL import Image
 import random
-
+from flask_restful import reqparse, abort, Api, Resource
+from resources import resources
+import requests
 
 app = Flask(__name__)
+api = Api(app)
+
+api.add_resource(resources.UserListResource, '/api/v2/users')
+api.add_resource(resources.UserSignInResurse, '/api/v2/signin')
+
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 COLLECTION_a = 100
@@ -59,14 +66,17 @@ def uploaded_file(filename):
 def login():
     form = SignInForm()
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.email == form.email.data).first()
-        if user and user.check_password(form.password.data):
+        data = {
+            'email': request.form.get('email'),
+            'password': request.form.get('password'),
+        }
+        response = requests.post('http://localhost:8080//api/v2/signin', json=data)
+        if response.status_code == 200:
+            db_sess = db_session.create_session()
+            user = db_sess.query(User).filter(User.email == form.email.data).first()
             login_user(user, remember=form.remember_me.data)
-            return redirect("/")
-        return render_template('signin.html',
-                               message="Неправильный логин или пароль",
-                               form=form)
+            return redirect('/')
+
     return render_template('signin.html', title='Авторизация', form=form)
 
 
@@ -86,17 +96,20 @@ def signup():
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('signup.html', form=form, message="Такой пользователь уже есть")
 
-        user = User(name=form.name.data,
-                    user_name=form.name.data,
-                    email=form.email.data)
-        user.set_password(form.password1.data)
-        db_sess.add(user)
-        db_sess.commit()
+        data = {
+            'name': request.form.get('name'),
+            'user_name': request.form.get('user_name'),
+            'email': request.form.get('email'),
+            'password': request.form.get('password1'),
+        }
 
-        with open(f"./users_jsons/{form.email.data}.json", "w") as new_user_json:
-            json.dump({}, new_user_json)
+        response = requests.post('http://localhost:8080/api/v2/users', json=data)
+        if response.status_code == 201:
+            return redirect('/signin')
 
-        return redirect('/signin')
+        message = response.json().get('message', 'Ошибка при регистрации')
+        return render_template('signup.html', form=SignUpForm(), message=message)
+
     return render_template('signup.html', form=form)
 
 
@@ -173,7 +186,6 @@ def clicker(collection_id):
 
                 with open(user_inventory_path, "w") as user_json:
                     json.dump(inventory_data, user_json)
-
 
         return redirect(f'/clicker/{collection_id}')
 
@@ -260,7 +272,7 @@ def add_collections():
             for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
                 nft_extension = ''
                 for el in secure_filename(nft_image.filename)[::-1]:
-                    nft_extension+= el
+                    nft_extension += el
                     if el == '.':
                         nft_extension = nft_extension[::-1]
                         break

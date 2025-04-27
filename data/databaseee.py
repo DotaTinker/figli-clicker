@@ -38,6 +38,17 @@ class User(SqlAlchemyBase, UserMixin):
     def is_active(self):
         return True
 
+    def to_dict(self, only=None):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'user_name': self.user_name,
+            'email': self.email
+        }
+        if only:
+            return {key: data[key] for key in only if key in data}
+        return data
+
 
 class Collection(SqlAlchemyBase):
     """Имя коллекции уникально и используется для записи в json файл о пользователе,
