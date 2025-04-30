@@ -3,6 +3,9 @@ from data.databaseee import User, Collection, NFT
 from data import db_session
 from flask import jsonify, request
 import json
+from flask_login import login_required, current_user
+import random
+import os
 
 parser = reqparse.RequestParser()
 parser.add_argument('name', type=str, required=True, help='Name cannot be blank')
@@ -190,3 +193,84 @@ class NFTListResource(Resource):
                 'rarity': new_nft.rarity,
                 'image_path': new_nft.image_path,
                 'collection_id': new_nft.collection_id}, 201
+
+
+class ClickerResource(Resource):
+
+    def post(self, collection_id, user_id):
+        db_sess = db_session.create_session()
+
+        # Получаем коллекцию
+        collection = db_sess.query(Collection).filter(Collection.id == collection_id).first()
+        if not collection:
+            return {'message': 'Collection not found'}, 404
+
+        # Получаем пользователя по user_id
+        user = db_sess.query(User).filter(User.id == user_id).first()
+        if not user:
+            return {'message': 'User not found'}, 404
+
+        # Увеличиваем счетчик нажатий пользователя
+        user.click_count = (user.click_count or 0) + 1
+        db_sess.merge(user)
+        db_sess.commit()
+
+        nft_received = None
+
+        # Логика выпадения NFT
+        if random.random() < 0.10:  # 10% шанс на выпадение NFT
+            rarity_roll = random.random()
+            if rarity_roll < 0.005:
+                rarity = 'godlike'
+            elif rarity_roll < 0.01:
+                rarity = 'legendary'
+            elif rarity_roll < 0.06:
+                rarity = 'epic'
+            elif rarity_roll < 0.16:
+                rarity = 'rare'
+            elif rarity_roll < 0.46:
+                rarity = 'uncommon'
+            else:
+                rarity = 'common'
+
+            nfts_of_rarity = db_sess.query(NFT).filter(
+                NFT.collection_id == collection.id,
+                NFT.rarity == rarity
+            ).all()
+
+            if nfts_of_rarity:
+                nft_received = random.choice(nfts_of_rarity)
+
+                user_inventory_path = f"./users_jsons/{user.email}.json"
+
+                if os.path.exists(user_inventory_path):
+                    with open(user_inventory_path, "r") as user_json:
+                        inventory_data = json.load(user_json)
+                else:
+                    inventory_data = {}
+
+                collection_name = collection.name
+
+                if collection_name not in inventory_data:
+                    inventory_data[collection_name] = {}
+
+                nft_name = nft_received.name
+
+                if nft_name in inventory_data[collection_name]:
+                    inventory_data[collection_name][nft_name] += 1
+                else:
+                    inventory_data[collection_name][nft_name] = 1
+
+                with open(user_inventory_path, "w") as user_json:
+                    json.dump(inventory_data, user_json)
+
+        response_data = {
+            'click_count': user.click_count,
+            'nft_received': {
+                'id': nft_received.id,
+                'name': nft_received.name,
+                'rarity': nft_received.rarity,
+            } if nft_received else None
+        }
+
+        return response_data, 200

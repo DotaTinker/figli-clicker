@@ -1,19 +1,47 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Clicker</title>
 </head>
 <body>
     <div style="text-align:center;">
         <h1>{{ collection.name }}</h1>
-        <form method="POST">
-            <button type="submit" style="border:none; background:none;">
-                <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" style="width:300px; height:auto;">
-            </button>
-        </form>
-        <h2>Счетчик нажатий: {{ current_user.click_count }}</h2> <!-- Предполагается наличие поля click_count у пользователя -->
+
+        <button id="click-button" style="border:none; background:none; padding:0; cursor:pointer;">
+            <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" style="width:300px; height:auto;" />
+        </button>
+
+        <h2>Счетчик нажатий: <span id="click-count">{{ current_user.click_count or 0 }}</span></h2>
     </div>
+
+<script>
+document.getElementById('click-button').addEventListener('click', () => {
+    fetch(`/api/clicker/{{ collection.id }}/click/{{ current_user.id }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Ошибка сети');
+        return response.json();
+    })
+    .then(data => {
+        if (data.click_count !== undefined) {
+            document.getElementById('click-count').textContent = data.click_count;
+        }
+        if (data.nft_received) {
+            alert(`Поздравляем! Вы получили NFT:\n${data.nft_received.name} (${data.nft_received.rarity})`);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при отправке клика.');
+    });
+});
+</script>
+
 </body>
 </html>

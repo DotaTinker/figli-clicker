@@ -18,6 +18,7 @@ api = Api(app)
 
 api.add_resource(resources.UserListResource, '/api/v2/users')
 api.add_resource(resources.UserSignInResurse, '/api/v2/signin')
+api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/click/<int:user_id>')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -129,7 +130,7 @@ def index():
     return render_template('home.html', collections=collections)
 
 
-@app.route('/clicker/<int:collection_id>', methods=['GET', 'POST'])
+@app.route('/clicker/<int:collection_id>', methods=['GET'])
 @login_required
 def clicker(collection_id):
     db_sess = db_session.create_session()
@@ -137,59 +138,6 @@ def clicker(collection_id):
 
     if not collection:
         return redirect("/")
-
-    if request.method == 'POST':
-        # Увеличиваем счетчик нажатий
-        current_user.click_count += 1  # Предполагается, что у пользователя есть поле click_count
-        db_sess.merge(current_user)
-        db_sess.commit()
-
-        # Логика выпадения NFT
-        if random.random() < 0.10:  # 10% шанс на выпадение NFT
-            rarity_roll = random.random()
-            if rarity_roll < 0.005:  # 0.1% шанс на godlike
-                rarity = 'godlike'
-            elif rarity_roll < 0.01:  # 1% шанс на mythic
-                rarity = 'legendary'
-            elif rarity_roll < 0.06:  # 5% шанс на epic
-                rarity = 'epic'
-            elif rarity_roll < 0.16:  # 10% шанс на rare
-                rarity = 'rare'
-            elif rarity_roll < 0.46:  # 30% шанс на uncommon
-                rarity = 'uncommon'
-            else:  # Остальные - common (50%)
-                rarity = 'common'
-
-            nfts_of_rarity = db_sess.query(NFT).filter(NFT.collection_id == collection.id,
-                                                       NFT.rarity == rarity).all()
-            if nfts_of_rarity:
-                nft_received = random.choice(nfts_of_rarity)
-
-                # Обновляем инвентарь пользователя в JSON-файле
-                user_inventory_path = f"./users_jsons/{current_user.email}.json"
-
-                if os.path.exists(user_inventory_path):
-                    with open(user_inventory_path, "r") as user_json:
-                        inventory_data = json.load(user_json)
-                else:
-                    inventory_data = {}
-
-                collection_name = collection.name
-
-                if collection_name not in inventory_data:
-                    inventory_data[collection_name] = {}
-
-                nft_name = nft_received.name
-
-                if nft_name in inventory_data[collection_name]:
-                    inventory_data[collection_name][nft_name] += 1
-                else:
-                    inventory_data[collection_name][nft_name] = 1
-
-                with open(user_inventory_path, "w") as user_json:
-                    json.dump(inventory_data, user_json)
-
-        return redirect(f'/clicker/{collection_id}')
 
     return render_template('clicker.html', collection=collection)
 
