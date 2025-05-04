@@ -274,3 +274,19 @@ class ClickerResource(Resource):
         }
 
         return response_data, 200
+
+
+class MiningResourse(Resource):
+    def post(self, user_id):
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == user_id).first()
+        if not user:
+            return {'message': 'User not found'}, 404
+
+        user.figli_coins += 1
+
+        db_sess.merge(user)
+        db_sess.commit()
+
+        return jsonify({'coins': user.figli_coins})
+

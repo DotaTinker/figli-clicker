@@ -19,6 +19,7 @@ api = Api(app)
 api.add_resource(resources.UserListResource, '/api/v2/users')
 api.add_resource(resources.UserSignInResurse, '/api/v2/signin')
 api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/click/<int:user_id>')
+api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -142,19 +143,9 @@ def clicker(collection_id):
     return render_template('clicker.html', collection=collection)
 
 
-@app.route('/mining', methods=['GET', 'POST'])
+@app.route('/mining', methods=['GET'])
 @login_required
 def mining():
-    db_sess = db_session.create_session()
-
-    if request.method == "POST":
-        current_user.figli_coins += 1
-
-        db_sess.merge(current_user)
-        db_sess.commit()
-
-        return jsonify({'coins': current_user.figli_coins})
-
     return render_template('mining.html', coins=current_user.figli_coins)
 
 

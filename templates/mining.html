@@ -95,11 +95,9 @@
             startBtn.textContent = 'Стоп';
 
             miningInterval = setInterval(() => {
-                // Выполняем имитацию вычислений
                 simulateMining();
 
-                // Отправляем запрос на сервер
-                fetch('{{ url_for("mining") }}', {
+                fetch(`/api/mining/{{ current_user.id }}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -109,7 +107,11 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    coinsCountSpan.textContent = data.coins; // Обновляем количество монет на странице
+                    if (data.coins !== undefined) {
+                        coinsCountSpan.textContent = data.coins; // Обновляем количество монет на странице
+                    } else {
+                        console.error('Ошибка:', data.message);
+                    }
                 })
                 .catch(err => console.error('Ошибка при майнинге:', err));
             }, 3000); // каждые 3 секунды добавляем монеты
