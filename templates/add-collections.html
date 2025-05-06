@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Добавить коллекцию NFT</h1>
-    <form action="/add-collections" method="POST" enctype="multipart/form-data">
+    <form id="collection-form" enctype="multipart/form-data">
         <label for="collection_name">Название коллекции:</label>
         <input type="text" id="collection_name" name="collection_name" required><br>
 
@@ -49,6 +49,29 @@
                 <input type="file" name="nft_image[]" accept="image/*" required><br>`;
             container.appendChild(newNft);
         }
+
+        document.getElementById('collection-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/api/collections', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка при добавлении коллекции');
+                }
+
+                const result = await response.json();
+                alert('Коллекция успешно добавлена!');
+            } catch (error) {
+                console.error(error);
+                alert('Произошла ошибка: ' + error.message);
+            }
+        });
     </script>
 </body>
 </html>

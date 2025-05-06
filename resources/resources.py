@@ -1,33 +1,21 @@
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restful import reqparse, abort, Resource
 from data.databaseee import User, Collection, NFT
 from data import db_session
 from flask import jsonify, request
 import json
-from flask_login import login_required, current_user
 import random
 import os
+from PIL import Image
+from werkzeug.utils import secure_filename
 
-parser = reqparse.RequestParser()
-parser.add_argument('name', type=str, required=True, help='Name cannot be blank')
-parser.add_argument('user_name', type=str, required=True, help='User name cannot be blank')
-parser.add_argument('email', type=str, required=True, help='Email cannot be blank')
-parser.add_argument('hashed_password', type=str, required=True, help='Password cannot be blank')
+COLLECTION_a = 100
+NFT_a = 100
+COLL_AND_NFTS_FOLDER = 'collections_and_nfts'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}  # Разрешенные расширения файлов
 
-user_parser = reqparse.RequestParser()
-user_parser.add_argument('name', required=True)
-user_parser.add_argument('user_name', required=True)
-user_parser.add_argument('email', required=True)
-user_parser.add_argument('password', required=True)
 
-collection_parser = reqparse.RequestParser()
-collection_parser.add_argument('name', required=True)
-collection_parser.add_argument('image_path', required=True)
-
-nft_parser = reqparse.RequestParser()
-nft_parser.add_argument('name', required=True)
-nft_parser.add_argument('rarity', required=True)
-nft_parser.add_argument('image_path', required=True)
-nft_parser.add_argument('collection_id', required=True, type=int)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def abort_if_user_not_found(user_id):
@@ -67,28 +55,6 @@ class UserResource(Resource):
         return jsonify({'success': 'OK'})
 
 
-class UserListResource(Resource):
-    def get(self):
-        session = db_session.create_session()
-        users = session.query(User).all()
-        return jsonify({'users': [item.to_dict(only=('id', 'name', 'user_name', 'email')) for item in users]})
-
-    def post(self):
-        args = user_parser.parse_args()
-        session = db_session.create_session()
-        user = User(
-            name=args['name'],
-            user_name=args['user_name'],
-            email=args['email']
-        )
-        user.set_password(args['password'])
-        session.add(user)
-        session.commit()
-        with open(f"./users_jsons/{args['email']}.json", "w") as new_user_json:
-            json.dump({}, new_user_json)
-        return {'id': user.id}, 201
-
-
 class UserSignInResurse(Resource):
     def post(self):
         data = request.get_json()
@@ -107,92 +73,96 @@ class UserSignInResurse(Resource):
         return {'message': 'Успешный вход', 'user_id': user.id}, 200
 
 
-class CollectionResource(Resource):
-    def get(self, collection_id):
-        abort_if_collection_not_found(collection_id)
-        session = db_session.create_session()
-        collection = session.query(Collection).get(collection_id)
-        return jsonify({'collection': collection.to_dict(only=('id', 'name', 'image_path'))})
-
-    def delete(self, collection_id):
-        abort_if_collection_not_found(collection_id)
-        session = db_session.create_session()
-        collection = session.query(Collection).get(collection_id)
-        session.delete(collection)
-        session.commit()
-        return jsonify({'success': 'OK'})
-
-
 class CollectionListResource(Resource):
-    def get(self):
-        session = db_session.create_session()
-        collections = session.query(Collection).all()
-        return jsonify({'collections': [item.to_dict(only=('id', 'name')) for item in collections]})
-
     def post(self):
-        args = collection_parser.parse_args()
-        session = db_session.create_session()
-        collection = Collection(
-            name=args['name'],
-            image_path=args['image_path']
-        )
-        session.add(collection)
-        session.commit()
-        return jsonify({'id': collection.id}), 201
+        collection_name = request.form['collection_name']  # Имя коллекции
+        collection_image = request.files['collection_image']  # Файл изображения коллекции
 
+        if not allowed_file(collection_image.filename):
+            return {'error': 'Разрешены только файлы формата PNG или JPG'}, 400
 
-class NFTResource(Resource):
-    def get(self, nft_id):
-        abort_if_nft_not_found(nft_id)
-        session = db_session.create_session()
-        nft = session.query(NFT).get(nft_id)
-        return jsonify({'nft': nft.to_dict(only=('id', 'name', 'rarity', 'image_path'))})
+        extension = os.path.splitext(secure_filename(collection_image.filename))[-1]
+        db_sess = db_session.create_session()
+        new_collection_id = str(db_sess.query(Collection).count() + 1)  # Получаем новый ID для коллекции
 
-    def delete(self, nft_id):
-        abort_if_nft_not_found(nft_id)
-        session = db_session.create_session()
-        nft = session.query(NFT).get(nft_id)
-        session.delete(nft)
-        session.commit()
-        return jsonify({'success': 'OK'})
+        folder_name = os.path.join(COLL_AND_NFTS_FOLDER, new_collection_id)
+        os.mkdir(folder_name)  # Создаем папку для новой коллекции
 
+        file_name = f"{new_collection_id}{extension}"
+        collection_image_path = os.path.join(folder_name, file_name)
+        collection_image_path_bd = f"{new_collection_id}/{file_name}"
 
-class NFTListResource(Resource):
-    def get(self):
-        session = db_session.create_session()
-        nfts = session.query(NFT).all()
-        return [{'id': nft.id,
-                 'name': nft.name,
-                 'rarity': nft.rarity,
-                 'image_path': nft.image_path,
-                 'collection_id': nft.collection_id} for nft in nfts], 200
+        try:
+            collection_image.save(collection_image_path)
 
-    def post(self):
-        args = nft_parser.parse_args()
-        session = db_session.create_session()
+            # Изменение размеров картинки до соотношения сторон 1:1
+            collection_image_obj = Image.open(collection_image_path)
+            width, height = collection_image_obj.size
 
-        collection = session.query(Collection).filter(Collection.id == args['collection_id']).first()
-        if not collection:
-            return {'message': 'Collection not found.'}, 404
+            if width != height:
+                min_side = min(width, height)
+                min_side -= min_side % 2
+                collection_image_obj = collection_image_obj.crop((0, 0, min_side, min_side))
 
-        if session.query(NFT).filter(NFT.name == args['name']).first():
-            return {'message': 'NFT with this name already exists.'}, 400
+            collection_image_obj = collection_image_obj.resize((COLLECTION_a, COLLECTION_a))
+            collection_image_obj.save(collection_image_path)
 
-        new_nft = NFT(
-            name=args['name'],
-            rarity=args['rarity'],
-            image_path=args['image_path'],
-            collection_id=args['collection_id']
-        )
+            # Создание новой коллекции с именем файла
+            collection = Collection(name=collection_name, image_path=collection_image_path_bd)
 
-        session.add(new_nft)
-        session.commit()
+            # Добавление NFT
+            nft_names = request.form.getlist('nft_name[]')
+            nft_rarities = request.form.getlist('nft_rarity[]')
+            nft_images = request.files.getlist('nft_image[]')
 
-        return {'id': new_nft.id,
-                'name': new_nft.name,
-                'rarity': new_nft.rarity,
-                'image_path': new_nft.image_path,
-                'collection_id': new_nft.collection_id}, 201
+            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
+
+            for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
+                if not allowed_file(nft_image.filename):
+                    raise ValueError(f'Файл {nft_name} имеет недопустимый формат. Разрешены только PNG или JPG.')
+
+                nft_extension = os.path.splitext(secure_filename(nft_image.filename))[-1]
+                nft_folder_path = os.path.join(folder_name, 'nfts')
+                os.makedirs(nft_folder_path, exist_ok=True)  # Создаем папку для NFT
+
+                new_nft_id = str(default_nft_id)
+                nft_file_name = f"{new_nft_id}{nft_extension}"
+                nft_image_path = os.path.join(nft_folder_path, nft_file_name)
+
+                try:
+                    nft_image.save(nft_image_path)
+
+                    nft_image_obj = Image.open(nft_image_path)
+                    width, height = nft_image_obj.size
+
+                    if width != height:
+                        min_side = min(width, height)
+                        min_side -= min_side % 2
+                        nft_image_obj = nft_image_obj.crop((0, 0, min_side, min_side))
+
+                    nft_image_obj = nft_image_obj.resize((NFT_a, NFT_a))
+                    nft_image_obj.save(nft_image_path)
+
+                    # Создание NFT с именем файла
+                    nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name)
+                    collection.nfts.append(nft)
+                    default_nft_id += 1
+
+                except Exception as e:
+                    return {'error': f'Ошибка при обработке NFT {nft_name}: {str(e)}'}, 500
+
+            db_sess.add(collection)
+            db_sess.commit()
+
+            return {'message': 'Коллекция успешно добавлена'}, 201
+
+        except Exception as e:
+            # Удаляем созданную папку и все её содержимое в случае ошибки
+            if os.path.exists(folder_name):
+                import shutil
+                shutil.rmtree(folder_name)
+
+            return {'error': 'Произошла ошибка при добавлении коллекции: {}'.format(str(e))}, 500
 
 
 class ClickerResource(Resource):
@@ -289,4 +259,3 @@ class MiningResourse(Resource):
         db_sess.commit()
 
         return jsonify({'coins': user.figli_coins})
-

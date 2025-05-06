@@ -5,21 +5,18 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
 import os
-from werkzeug.utils import secure_filename
 import json
-from PIL import Image
-import random
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restful import Api
 from resources import resources
 import requests
 
 app = Flask(__name__)
 api = Api(app)
 
-api.add_resource(resources.UserListResource, '/api/v2/users')
 api.add_resource(resources.UserSignInResurse, '/api/v2/signin')
 api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/click/<int:user_id>')
 api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
+api.add_resource(resources.CollectionListResource, '/api/collections')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -167,90 +164,6 @@ def nftmanage():
 @login_required
 @admin_required
 def add_collections():
-    if request.method == 'POST':
-        collection_name = request.form['collection_name']  # имя
-        collection_image = request.files['collection_image']  # файл
-
-        extension = ''
-        for el in secure_filename(collection_image.filename)[::-1]:
-            extension += el
-            if el == '.':
-                extension = extension[::-1]
-                break
-        # здесь получил расширение файла
-        db_sess = db_session.create_session()
-        new_collection_id = str(db_sess.query(Collection).count() + 1)  # Получаем новый ID для коллекции
-
-        try:
-            folder_name = os.path.join(COLL_AND_NFTS_FOLDER, new_collection_id)
-            os.mkdir(folder_name)  # Создаем папку для новой коллекции
-
-            file_name = f"{new_collection_id}{extension}"
-            collection_image_path = os.path.join(folder_name, file_name)
-            collection_image_path_bd = f"{new_collection_id}/{file_name}"
-            collection_image.save(collection_image_path)
-
-            # Изменение размеров картинки до соотношения сторон 1:1
-            collection_image = Image.open(collection_image_path)
-            width, height = collection_image.size
-
-            if width != height:
-                min_side = min(width, height)
-                min_side -= min_side % 2
-                collection_image = collection_image.crop((0, 0, min_side, min_side))
-
-            collection_image = collection_image.resize((COLLECTION_a, COLLECTION_a))
-            collection_image.save(collection_image_path)
-
-            # Создание новой коллекции с именем файла
-            collection = Collection(name=collection_name, image_path=collection_image_path_bd)
-
-            # Добавление NFT
-            nft_names = request.form.getlist('nft_name[]')
-            nft_rarities = request.form.getlist('nft_rarity[]')
-            nft_images = request.files.getlist('nft_image[]')
-
-            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
-            for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
-                nft_extension = ''
-                for el in secure_filename(nft_image.filename)[::-1]:
-                    nft_extension += el
-                    if el == '.':
-                        nft_extension = nft_extension[::-1]
-                        break
-                nft_folder_path = os.path.join(folder_name, 'nfts')
-                os.makedirs(nft_folder_path, exist_ok=True)  # Создаем папку для NFT
-
-                new_nft_id = str(default_nft_id)
-                nft_file_name = f"{new_nft_id}{nft_extension}"
-                nft_image_path = os.path.join(nft_folder_path, nft_file_name)
-                nft_image.save(nft_image_path)
-
-                nft_image = Image.open(nft_image_path)
-                width, height = nft_image.size
-
-                if width != height:
-                    min_side = min(width, height)
-                    min_side -= min_side % 2
-                    nft_image = nft_image.crop((0, 0, min_side, min_side))
-
-                nft_image = nft_image.resize((NFT_a, NFT_a))
-                nft_image.save(nft_image_path)
-
-                # Создание NFT с именем файла
-                nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_image_path)
-                collection.nfts.append(nft)
-                default_nft_id += 1
-
-            db_sess.add(collection)
-            db_sess.commit()
-
-            return redirect('/')
-
-        except Exception as e:
-            print(str(e))
-            return redirect('/add-collections')
-
     return render_template('add-collections.html')
 
 
