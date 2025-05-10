@@ -44,7 +44,6 @@ class User(SqlAlchemyBase, UserMixin):
     tank_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     healer_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
 
-
     def __repr__(self):
         return (f"""{self.id}, {self.name}, {self.user_name}, {self.email}, {self.hashed_password}, 
                 {self.figli_coins}, {self.modified_date}, {self.is_admin}""")
@@ -94,7 +93,19 @@ class NFT(SqlAlchemyBase):
     name = sqlalchemy.Column(sqlalchemy.String, nullable=False, unique=True)
     rarity = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     rarities_as_brawler = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    classes_as_brawler= sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    classes_as_brawler = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     image_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     collection_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('collections.id'))
     collection = relationship("Collection", back_populates="nfts")
+
+
+class TradeRequests(SqlAlchemyBase):
+    """Тут храгятся все запросы на торговлю от игроков"""
+    __tablename__ = 'TradeForFigli'
+
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
+    user_email = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    id_nft = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+    brawler_class = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    brawler_rarity = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    cost = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)

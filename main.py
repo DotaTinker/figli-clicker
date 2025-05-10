@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, request, send_from_directory, jsonify
 from data import db_session
-from data.databaseee import User, Collection, NFT
+from data.databaseee import User, Collection
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
@@ -18,6 +18,7 @@ api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/cl
 api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
 api.add_resource(resources.CollectionListResource, '/api/collections')
 api.add_resource(resources.UserListResource, '/api/v2/users')
+api.add_resource(resources.TradingListResourse, '/api/trading')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -60,6 +61,19 @@ def admin_required(f):  # декоратор недопускающий люде
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(COLL_AND_NFTS_FOLDER, filename)
+
+
+@app.route('/inventory/<user_email>', methods=['GET'])
+def get_inventory(user_email):
+    user_inventory_path = f"./users_jsons/{user_email}.json"
+
+    if not os.path.exists(user_inventory_path):
+        return jsonify({'message': 'Инвентарь не найден'}), 404
+
+    with open(user_inventory_path, "r") as user_json:
+        inventory_data = json.load(user_json)
+
+    return jsonify(inventory_data)
 
 
 @app.route('/signin', methods=['GET', 'POST'])
@@ -161,7 +175,7 @@ def nftmanage():
     return render_template("nftmanage.html")
 
 
-@app.route('/add-collections', methods=['GET', 'POST'])
+@app.route('/add-collections', methods=['GET'])
 @login_required
 @admin_required
 def add_collections():
@@ -177,6 +191,18 @@ def profile(user_name):
         with open(f"./users_jsons/{user.email}.json") as user_json:
             return render_template("profile.html",
                                    User=user, json=json.load(user_json))
+
+
+@app.route("/trading")
+@login_required
+def trading():
+    return render_template("traiding.html")
+
+
+@app.route("/create_trading")
+@login_required
+def create_trading():
+    return render_template("create_traiding.html")
 
 
 if __name__ == '__main__':

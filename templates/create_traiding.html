@@ -1,0 +1,74 @@
+<form id="trade-form">
+    <label for="nft-select">Выберите предмет для торговли:</label>
+    <select id="nft-select" name="id_nft">
+        <option value="">Загрузка...</option>
+    </select>
+
+    <label for="cost">Стоимость:</label>
+    <input type="number" id="cost" name="cost" required>
+
+    <button type="submit">Создать запрос на торговлю</button>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userEmail = '{{ current_user.email }}';
+    fetch(`/inventory/${userEmail}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Не удалось загрузить инвентарь');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const nftSelect = document.getElementById('nft-select');
+            nftSelect.innerHTML = '';
+
+            for (const [id, items] of Object.entries(data)) {
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = id; // ID NFT
+                    option.textContent = `${id} ${item.rarity} ${item.brawler}`; // Формат: id rarity brawler
+                    nftSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при загрузке инвентаря: ' + error.message);
+        });
+});
+
+document.getElementById('trade-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const nftSelect = document.getElementById('nft-select');
+    const selectedNftText = nftSelect.options[nftSelect.selectedIndex].text;
+    const costValue = document.getElementById('cost').value;
+
+    fetch('/api/trading', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_email: '{{ current_user.email }}',
+            nft: selectedNftText,
+            cost: costValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+
+        if (data.message) {
+            alert(data.message);
+        }
+
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
+});
+</script>

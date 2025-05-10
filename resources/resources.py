@@ -1,7 +1,6 @@
 import pprint
-
 from flask_restful import reqparse, abort, Resource
-from data.databaseee import User, Collection, NFT
+from data.databaseee import User, Collection, NFT, TradeRequests
 from data import db_session
 from flask import jsonify, request
 import json
@@ -34,7 +33,8 @@ def norm_list(ne_norm_list):
                     fl2 = False
                     break
         if fl2:
-            return ne_norm_list # ну он не ненормальный список возрващвет, а уже нормальный, ну кароче переменная такая
+            return ne_norm_list  # ну он не ненормальный список возрващвет, а уже нормальный, ну кароче переменная такая
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -75,6 +75,7 @@ class UserResource(Resource):
         session.delete(user)
         session.commit()
         return jsonify({'success': 'OK'})
+
 
 class UserListResource(Resource):
     def get(self):
@@ -129,7 +130,7 @@ class CollectionListResource(Resource):
         new_collection_id = str(db_sess.query(Collection).count() + 1)  # Получаем новый ID для коллекции
 
         folder_name = os.path.join(COLL_AND_NFTS_FOLDER, new_collection_id)
-        '''os.mkdir(folder_name)'''  # Создаем папку для новой коллекции
+        os.mkdir(folder_name)  # Создаем папку для новой коллекции
 
         file_name = f"{new_collection_id}{extension}"
         collection_image_path = os.path.join(folder_name, file_name)
@@ -169,7 +170,8 @@ class CollectionListResource(Resource):
             ts = norm_list(request.form.getlist("tank"))
             pprint.pprint([rs, srs, es, ms, ls, hs, ss, ds, ts])
             default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
-            for nft_name, nft_rarity, nft_image, r, sr, e, m, l, h, s, d, t in zip(nft_names, nft_rarities, nft_images, rs, srs, es, ms, ls, hs, ss, ds, ts):
+            for nft_name, nft_rarity, nft_image, r, sr, e, m, l, h, s, d, t in zip(nft_names, nft_rarities, nft_images,
+                                                                                   rs, srs, es, ms, ls, hs, ss, ds, ts):
                 if not allowed_file(nft_image.filename):
                     raise ValueError(f'Файл {nft_name} имеет недопустимый формат. Разрешены только PNG или JPG.')
 
@@ -195,7 +197,7 @@ class CollectionListResource(Resource):
                     nft_image_obj.save(nft_image_path)
 
                     nft_brawler_rarities = []
-                    for i, el in enumerate([r, sr, e, m , l]):
+                    for i, el in enumerate([r, sr, e, m, l]):
                         if el:
                             nft_brawler_rarities.append(str(i))
 
@@ -204,7 +206,9 @@ class CollectionListResource(Resource):
                         if el:
                             nft_brawler_classes.append(str(i))
                     # Создание NFT с именем файла
-                    nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name, classes_as_brawler=" ".join(nft_brawler_classes), rarities_as_brawler=" ".join(nft_brawler_rarities))
+                    nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name,
+                              classes_as_brawler=" ".join(nft_brawler_classes),
+                              rarities_as_brawler=" ".join(nft_brawler_rarities))
                     collection.nfts.append(nft)
                     default_nft_id += 1
 
@@ -244,45 +248,6 @@ class ClickerResource(Resource):
         user.click_count = (user.click_count or 0) + 1
         db_sess.merge(user)
         db_sess.commit()
-
-        rarity_percents = {"rare": user.rare, "super_rare": user.super_rare, "epic": user.epic, "mythic": user.mythic, "legendary": user.legendary, "": user.none}
-        rarity_strike = {"rare": user.rare_s, "super_rare": user.super_rare_s, "epic": user.epic_s, "mythic": user.mythic_s, "legendary": user.legendary_s, "": user.none_s}
-        _rarity = random.choices(list(rarity_percents.keys()), weights=list(rarity_percents.values()))[0]
-        rarity_strike, rarity_percents = Brawlers.chance_rarity_changer(_rarity, rarity_strike, rarity_percents)
-
-        for k, v in rarity_percents.items():
-            if k == "rare":
-                user.rare = v
-            elif k == "super_rare":
-                user.super_rare = v
-            elif k == "epic":
-                user.epic = v
-            elif k == "mythic":
-                user.mythic = v
-            elif k == "legendary":
-                user.legendary = v
-            else:
-                user.none = v
-            db_sess.commit()
-
-        for k, v in rarity_strike.items():
-            if k == "rare":
-                user.rare_s = v
-            elif k == "super_rare":
-                user.super_rare_s = v
-            elif k == "epic":
-                user.epic_s = v
-            elif k == "mythic":
-                user.mythic_s = v
-            elif k == "legendary":
-                user.legendary_s = v
-            else:
-                user.none_s = v
-            db_sess.commit()
-
-        if _rarity:
-            classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer, "sniper": user.sniper, "tank": user.tank}
-            classes_strike = {"healer": user.healer_s, "damage_dealer": user.damage_dealer_s, "sniper": user.sniper_s, "tank": user.tank_s}
 
         nft_received = None
 
@@ -358,3 +323,74 @@ class MiningResourse(Resource):
         db_sess.commit()
 
         return jsonify({'coins': user.figli_coins})
+
+
+class TradingListResourse(Resource):
+    def get(self):
+        session = db_session.create_session()
+        trade = session.query(TradeRequests).all()
+        return jsonify({'trade_post': [item.to_dict(
+            only=('user_email', 'id_nft', 'brawler_class', "brawler_rarity")) for item in trade]})
+
+    def post(self):
+        data = request.get_json()
+
+        if not data or 'user_email' not in data or 'nft' not in data or 'cost' not in data:
+            return {'message': 'Пожалуйста, предоставьте email пользователя, NFT и стоимость'}, 400
+
+        user_email = data.get('user_email')
+        nft = data.get('nft')
+        cost = data.get('cost')
+
+        if int(cost) < 1:
+            return {'message': 'Пожалуйста, введите корректную стоимость'}, 400
+
+        session = db_session.create_session()
+        user = session.query(User).filter(User.email == user_email).first()
+
+        if not user:
+            return {'message': 'Пользователь не найден'}, 404
+
+        user_inventory_path = f"./users_jsons/{user_email}.json"
+
+        if os.path.exists(user_inventory_path):
+            with open(user_inventory_path, "r") as user_json:
+                inventory_data = json.load(user_json)
+
+            # Извлекаем ID и характеристики из строки
+            nft_parts = nft.split()  # Разделяем строку на части
+            nft_id = nft_parts[0]  # ID NFT
+            brawler_class = nft_parts[2]  # Класс бравлера
+            brawler_rarity = nft_parts[1]  # Редкость бравлера
+
+            # Удаляем NFT из инвентаря по ID и характеристикам
+            if nft_id in inventory_data:
+                item_found = False
+
+                for item in inventory_data[nft_id]:
+                    if item['brawler'] == brawler_class and item['rarity'] == brawler_rarity:
+                        inventory_data[nft_id].remove(item)
+                        item_found = True
+                        break
+
+                if not item_found:
+                    return {'message': 'NFT с заданными характеристиками не найден в инвентаре пользователя'}, 404
+            else:
+                return {'message': 'NFT не найден в инвентаре пользователя'}, 404
+
+            with open(user_inventory_path, "w") as user_json:
+                json.dump(inventory_data, user_json)
+
+            # Создаем новый запрос на торговлю
+            trade_request = TradeRequests(
+                user_email=user_email,
+                id_nft=int(nft_id),
+                brawler_class=brawler_class,
+                brawler_rarity=brawler_rarity,
+                cost=int(cost)
+            )
+
+            session.add(trade_request)
+            session.commit()
+
+            return {'message': 'Запрос на торговлю успешно создан'}, 201
