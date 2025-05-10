@@ -2,13 +2,12 @@ import random
 import math
 from pygame.time import wait
 
-classes_persent = {"healer": 25, "damage_dealer": 25, "sniper": 25, "tank": 25}
+"""classes_persent = {"healer": 25, "damage_dealer": 25, "sniper": 25, "tank": 25}
 classes_strike = {"healer": 0, "damage_dealer": 0, "sniper": 0, "tank": 0}
 rarity_percents = {"rare": 1, "super_rare": 0.7, "epic": 0.5, "mythic": 0.25, "legendary": 0.04, "": 97.51}
-rarity_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0, "": 0}
+rarity_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0, "": 0}"""
 
-def chance_class_changer(_class):
-    global classes_persent, classes_strike
+def chance_class_changer(_class, classes_persent, classes_strike):
     classes_persent_2 = classes_persent.copy()
     persent = classes_persent_2.pop(_class)
     strike = classes_strike[_class]
@@ -55,9 +54,9 @@ def chance_class_changer(_class):
     if sum(classes_persent.values()) != 100:
         classes_persent[random.choice(list(classes_persent.keys()))] += 100 - sum(
             classes_persent.values())
+    return classes_persent, classes_strike
 
-def chance_rarity_changer(_rarity):
-    global rarity_strike, rarity_percents
+def chance_rarity_changer(_rarity, rarity_strike, rarity_percents):
     for k in rarity_strike.keys():
         if k != _rarity:
             rarity_strike[k] = 0
@@ -95,6 +94,7 @@ def chance_rarity_changer(_rarity):
                 rarity_percents[k] += minus / 100 * 50
     a = 100 - sum(rarity_percents.values())
     rarity_percents[random.choices(list(rarity_percents.keys()))[0]] += a
+    return rarity_strike, rarity_percents
 
 class BaseBrawler:
     def __init__(self, rarity, team, x, y):
@@ -622,7 +622,7 @@ class FieldTest:
                     row.append("-")
             print(row)
 
-
+"""
 def ff(f, ll):
     for y in range(10):
         for x in range(10):
@@ -664,7 +664,7 @@ while True:
     print()
     print()
 
-
+"""
 '''h = Healer("legs", "blue", 15, 15)
 f2 = FieldTest()
 f2.add_brawler(h)

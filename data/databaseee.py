@@ -20,6 +20,30 @@ class User(SqlAlchemyBase, UserMixin):
     modified_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
     is_admin = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False, default=False)
     click_count = sqlalchemy.Column(sqlalchemy.Integer, nullable=False, default=0)
+    # дальше идут шансы на редкости, серии выпадения редкостей, они могут быть пустыми т.к создаются
+    # в тот момент, когда пользователь впервые зашёл в кликер, а значит, зарегался
+    rare = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    super_rare = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    epic = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    mythic = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    legendary = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    none = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    rare_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    super_rare_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    epic_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    mythic_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    legendary_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    none_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    # далее шансы на классы и серии выпадений классов
+    damage_dealer = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    sniper = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    tank = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    healer = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    damage_dealer_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    sniper_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    tank_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    healer_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+
 
     def __repr__(self):
         return (f"""{self.id}, {self.name}, {self.user_name}, {self.email}, {self.hashed_password}, 
@@ -69,6 +93,8 @@ class NFT(SqlAlchemyBase):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     name = sqlalchemy.Column(sqlalchemy.String, nullable=False, unique=True)
     rarity = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    rarities_as_brawler = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    classes_as_brawler= sqlalchemy.Column(sqlalchemy.String, nullable=False)
     image_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     collection_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('collections.id'))
     collection = relationship("Collection", back_populates="nfts")

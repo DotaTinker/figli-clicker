@@ -17,6 +17,7 @@ api.add_resource(resources.UserSignInResurse, '/api/v2/signin')
 api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/click/<int:user_id>')
 api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
 api.add_resource(resources.CollectionListResource, '/api/collections')
+api.add_resource(resources.UserListResource, '/api/v2/users')
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 

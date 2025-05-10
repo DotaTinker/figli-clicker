@@ -1,3 +1,5 @@
+import pprint
+
 from flask_restful import reqparse, abort, Resource
 from data.databaseee import User, Collection, NFT
 from data import db_session
@@ -7,12 +9,32 @@ import random
 import os
 from PIL import Image
 from werkzeug.utils import secure_filename
+import Brawlers
 
 COLLECTION_a = 100
 NFT_a = 100
 COLL_AND_NFTS_FOLDER = 'collections_and_nfts'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}  # Разрешенные расширения файлов
 
+user_parser = reqparse.RequestParser()
+user_parser.add_argument('name', required=True)
+user_parser.add_argument('user_name', required=True)
+user_parser.add_argument('email', required=True)
+user_parser.add_argument('password', required=True)
+
+
+def norm_list(ne_norm_list):
+    while True:
+        fl2 = True
+        if 'on' in ne_norm_list:
+            for i in range(len(ne_norm_list)):
+                if ne_norm_list[i] == 'on':
+                    ne_norm_list[i] = '_on'
+                    ne_norm_list.pop(i - 1)
+                    fl2 = False
+                    break
+        if fl2:
+            return ne_norm_list # ну он не ненормальный список возрващвет, а уже нормальный, ну кароче переменная такая
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -54,6 +76,27 @@ class UserResource(Resource):
         session.commit()
         return jsonify({'success': 'OK'})
 
+class UserListResource(Resource):
+    def get(self):
+        session = db_session.create_session()
+        users = session.query(User).all()
+        return jsonify({'users': [item.to_dict(only=('id', 'name', 'user_name', 'email')) for item in users]})
+
+    def post(self):
+        args = user_parser.parse_args()
+        session = db_session.create_session()
+        user = User(
+            name=args['name'],
+            user_name=args['user_name'],
+            email=args['email']
+        )
+        user.set_password(args['password'])
+        session.add(user)
+        session.commit()
+        with open(f"./users_jsons/{args['email']}.json", "w") as new_user_json:
+            json.dump({}, new_user_json)
+        return {'id': user.id}, 201
+
 
 class UserSignInResurse(Resource):
     def post(self):
@@ -86,7 +129,7 @@ class CollectionListResource(Resource):
         new_collection_id = str(db_sess.query(Collection).count() + 1)  # Получаем новый ID для коллекции
 
         folder_name = os.path.join(COLL_AND_NFTS_FOLDER, new_collection_id)
-        os.mkdir(folder_name)  # Создаем папку для новой коллекции
+        '''os.mkdir(folder_name)'''  # Создаем папку для новой коллекции
 
         file_name = f"{new_collection_id}{extension}"
         collection_image_path = os.path.join(folder_name, file_name)
@@ -104,7 +147,6 @@ class CollectionListResource(Resource):
                 min_side -= min_side % 2
                 collection_image_obj = collection_image_obj.crop((0, 0, min_side, min_side))
 
-            collection_image_obj = collection_image_obj.resize((COLLECTION_a, COLLECTION_a))
             collection_image_obj.save(collection_image_path)
 
             # Создание новой коллекции с именем файла
@@ -115,9 +157,19 @@ class CollectionListResource(Resource):
             nft_rarities = request.form.getlist('nft_rarity[]')
             nft_images = request.files.getlist('nft_image[]')
 
-            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
+            rs = norm_list(request.form.getlist("rare"))
+            srs = norm_list(request.form.getlist("super_rare"))
+            es = norm_list(request.form.getlist("epic"))
+            ms = norm_list(request.form.getlist("mythic"))
+            ls = norm_list(request.form.getlist("legendary"))
 
-            for nft_name, nft_rarity, nft_image in zip(nft_names, nft_rarities, nft_images):
+            hs = norm_list(request.form.getlist("healer"))
+            ss = norm_list(request.form.getlist("sniper"))
+            ds = norm_list(request.form.getlist("damage_dealer"))
+            ts = norm_list(request.form.getlist("tank"))
+            pprint.pprint([rs, srs, es, ms, ls, hs, ss, ds, ts])
+            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
+            for nft_name, nft_rarity, nft_image, r, sr, e, m, l, h, s, d, t in zip(nft_names, nft_rarities, nft_images, rs, srs, es, ms, ls, hs, ss, ds, ts):
                 if not allowed_file(nft_image.filename):
                     raise ValueError(f'Файл {nft_name} имеет недопустимый формат. Разрешены только PNG или JPG.')
 
@@ -140,11 +192,19 @@ class CollectionListResource(Resource):
                         min_side -= min_side % 2
                         nft_image_obj = nft_image_obj.crop((0, 0, min_side, min_side))
 
-                    nft_image_obj = nft_image_obj.resize((NFT_a, NFT_a))
                     nft_image_obj.save(nft_image_path)
 
+                    nft_brawler_rarities = []
+                    for i, el in enumerate([r, sr, e, m , l]):
+                        if el:
+                            nft_brawler_rarities.append(str(i))
+
+                    nft_brawler_classes = []
+                    for i, el in enumerate([h, s, d, t]):
+                        if el:
+                            nft_brawler_classes.append(str(i))
                     # Создание NFT с именем файла
-                    nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name)
+                    nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name, classes_as_brawler=" ".join(nft_brawler_classes), rarities_as_brawler=" ".join(nft_brawler_rarities))
                     collection.nfts.append(nft)
                     default_nft_id += 1
 
@@ -184,6 +244,45 @@ class ClickerResource(Resource):
         user.click_count = (user.click_count or 0) + 1
         db_sess.merge(user)
         db_sess.commit()
+
+        rarity_percents = {"rare": user.rare, "super_rare": user.super_rare, "epic": user.epic, "mythic": user.mythic, "legendary": user.legendary, "": user.none}
+        rarity_strike = {"rare": user.rare_s, "super_rare": user.super_rare_s, "epic": user.epic_s, "mythic": user.mythic_s, "legendary": user.legendary_s, "": user.none_s}
+        _rarity = random.choices(list(rarity_percents.keys()), weights=list(rarity_percents.values()))[0]
+        rarity_strike, rarity_percents = Brawlers.chance_rarity_changer(_rarity, rarity_strike, rarity_percents)
+
+        for k, v in rarity_percents.items():
+            if k == "rare":
+                user.rare = v
+            elif k == "super_rare":
+                user.super_rare = v
+            elif k == "epic":
+                user.epic = v
+            elif k == "mythic":
+                user.mythic = v
+            elif k == "legendary":
+                user.legendary = v
+            else:
+                user.none = v
+            db_sess.commit()
+
+        for k, v in rarity_strike.items():
+            if k == "rare":
+                user.rare_s = v
+            elif k == "super_rare":
+                user.super_rare_s = v
+            elif k == "epic":
+                user.epic_s = v
+            elif k == "mythic":
+                user.mythic_s = v
+            elif k == "legendary":
+                user.legendary_s = v
+            else:
+                user.none_s = v
+            db_sess.commit()
+
+        if _rarity:
+            classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer, "sniper": user.sniper, "tank": user.tank}
+            classes_strike = {"healer": user.healer_s, "damage_dealer": user.damage_dealer_s, "sniper": user.sniper_s, "tank": user.tank_s}
 
         nft_received = None
 
