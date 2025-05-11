@@ -19,6 +19,7 @@ api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
 api.add_resource(resources.CollectionListResource, '/api/collections')
 api.add_resource(resources.UserListResource, '/api/v2/users')
 api.add_resource(resources.TradingListResourse, '/api/trading')
+api.add_resource(resources.TradingResourse, "/api/purchase/<int:trade_id>/<string:buyer_email>")
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -196,7 +197,7 @@ def profile(user_name):
 @app.route("/trading")
 @login_required
 def trading():
-    return render_template("traiding.html")
+    return render_template("trading.html", current_user_id=current_user.email)
 
 
 @app.route("/create_trading")

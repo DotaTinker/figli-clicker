@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запросы на торговлю</title>
+    <style>
+        .nft-item {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .nft-image {
+            width: 100px;
+            height: auto;
+            margin-right: 10px;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Запросы на торговлю</h1>
+
+<div class="filter-container">
+    <label for="price-filter">Цена:</label>
+    <input type="number" id="price-filter" placeholder="Макс. цена (FIG)">
+
+    <label for="rarity-filter">Редкость NFT:</label>
+    <select id="rarity-filter">
+        <option value="">Все</option>
+        <option value="common">Обычный</option>
+        <option value="uncommon">Необычный</option>
+        <option value="rare">Редкий</option>
+        <option value="epic">Эпический</option>
+        <option value="legendary">Легендарный</option>
+        <option value="godlike">БОЖЕСТВЕННЫЙ</option>
+    </select>
+
+    <label for="brawler-rarity-filter">Редкость бойца:</label>
+    <select id="brawler-rarity-filter">
+        <option value="">Все</option>
+        <option value="rare">редкий</option>
+        <option value="super_rare">сверх редкий</option>
+        <option value="epic">эпический</option>
+        <option value="mythic">мифический</option>
+        <option value="leg">Легендарный</option>
+    </select>
+
+    <label for="brawler-class-filter">Класс бойца:</label>
+    <select id="brawler-class-filter">
+        <option value="">Все</option>
+        <option value="healer">целитель</option>
+        <option value="damage_dealer">Боец</option>
+        <option value="sniper">Снайпер</option>
+        <option value="tank">Танк</option>
+    </select>
+
+    <button id="filter-button">Применить фильтры</button>
+</div>
+
+<div id="nft-list"></div>
+
+<div style="margin-top: 20px;">
+    <a href="/create_trading" id="create-trading-button" style="text-decoration: none;">
+        <button style="padding: 10px 20px; font-size: 16px;">Создать торговлю</button>
+    </a>
+</div>
+
+<script>
+let nftData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/trading') // Замените на ваш API
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Сеть ответила с ошибкой ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Данные получены:', data); // Отладка
+            nftData = data.trade_post || [];
+            renderNFTs(nftData);
+        })
+        .catch(error => console.error('Ошибка:', error));
+
+    document.getElementById('filter-button').addEventListener('click', applyFilters);
+});
+
+function renderNFTs(nfts) {
+    const nftList = document.getElementById('nft-list');
+    nftList.innerHTML = '';
+
+    if (nfts.length > 0) {
+        nfts.forEach(request => {
+            const nftItem = document.createElement('div');
+            nftItem.className = 'nft-item';
+
+            nftItem.addEventListener('click', () => confirmPurchase(request));
+
+            nftItem.innerHTML = `
+                <img src="${request.image_path}" alt="${request.nft_name}" class="nft-image">
+                <div>
+                    <h3>${request.nft_name}</h3>
+                    <p>Редкость NFT: ${request.nft_rarity}</p>
+                    <p>Редкость бойца: ${request.brawler_rarity}</p>
+                    <p>Класс бойца: ${request.brawler_class}</p>
+                    <p>Цена: ${request.cost} FIG</p>
+                </div>`;
+
+            nftList.appendChild(nftItem);
+        });
+    } else {
+        nftList.innerHTML = '<p>Нет доступных запросов на торговлю.</p>';
+    }
+}
+
+function applyFilters() {
+    const maxPrice = parseFloat(document.getElementById('price-filter').value) || Infinity;
+    const rarity = document.getElementById('rarity-filter').value;
+    const brawlerRarity = document.getElementById('brawler-rarity-filter').value;
+    const brawlerClass = document.getElementById('brawler-class-filter').value;
+
+    const filteredNFTs = nftData.filter(request => {
+        return (
+            request.cost <= maxPrice &&
+            (rarity === '' || request.nft_rarity === rarity) &&
+            (brawlerRarity === '' || request.brawler_rarity === brawlerRarity) &&
+            (brawlerClass === '' || request.brawler_class === brawlerClass)
+        );
+    });
+
+    renderNFTs(filteredNFTs);
+}
+
+function confirmPurchase(request) {
+    const confirmation = confirm(`Подтвердить покупку "${request.nft_name}" за ${request.cost} FIG?`);
+
+    if (confirmation) {
+        console.log(request.trade_id);
+        const tradeId = request.trade_id;
+        fetch('/api/purchase/' + tradeId + '/{{ current_user_id }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка сети при выполнении запроса');
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(`Покупка успешна!`);
+            location.reload();
+        })
+        .catch(error => console.error('Ошибка:', error));
+    }
+}
+</script>
+
+</body>
+</html>
