@@ -92,6 +92,7 @@ class UserListResource(Resource):
             email=args['email']
         )
         user.set_password(args['password'])
+        user.all_chances_to_default(session)
         session.add(user)
         session.commit()
         with open(f"./users_jsons/{args['email']}.json", "w") as new_user_json:
@@ -196,15 +197,17 @@ class CollectionListResource(Resource):
 
                     nft_image_obj.save(nft_image_path)
 
+                    q = ["rare", "super_rare", "epic", "mythic", "legendary"]
                     nft_brawler_rarities = []
                     for i, el in enumerate([r, sr, e, m, l]):
                         if el:
-                            nft_brawler_rarities.append(str(i))
+                            nft_brawler_rarities.append(q[i])
 
+                    q = ["healer", "damage_dealer", "sniper", "tank"]
                     nft_brawler_classes = []
                     for i, el in enumerate([h, s, d, t]):
                         if el:
-                            nft_brawler_classes.append(str(i))
+                            nft_brawler_classes.append(q[i])
                     # Создание NFT с именем файла
                     nft = NFT(name=nft_name, rarity=nft_rarity, image_path=nft_file_name,
                               classes_as_brawler=" ".join(nft_brawler_classes),
@@ -230,84 +233,104 @@ class CollectionListResource(Resource):
 
 
 class ClickerResource(Resource):
-
     def post(self, collection_id, user_id):
-        db_sess = db_session.create_session()
+        try:
+            print(1)
+            db_sess = db_session.create_session()
 
-        # Получаем коллекцию
-        collection = db_sess.query(Collection).filter(Collection.id == collection_id).first()
-        if not collection:
-            return {'message': 'Collection not found'}, 404
+            # Получаем коллекцию
+            collection = db_sess.query(Collection).filter(Collection.id == collection_id).first()
+            if not collection:
+                return {'message': 'Collection not found'}, 404
 
-        # Получаем пользователя по user_id
-        user = db_sess.query(User).filter(User.id == user_id).first()
-        if not user:
-            return {'message': 'User not found'}, 404
+            # Получаем пользователя по user_id
+            user = db_sess.query(User).filter(User.id == user_id).first()
+            if not user:
+                return {'message': 'User not found'}, 404
 
-        # Увеличиваем счетчик нажатий пользователя
-        user.click_count = (user.click_count or 0) + 1
-        db_sess.merge(user)
-        db_sess.commit()
+            # Увеличиваем счетчик нажатий пользователя
+            user.click_count = (user.click_count or 0) + 1
+            db_sess.merge(user)
+            db_sess.commit()
 
-        nft_received = None
+            rarity_percents = {"rare": user.rare, "super_rare": user.super_rare, "epic": user.epic, "mythic": user.mythic,
+                               "legendary": user.legendary, "": user.none}
+            rarity_strike = {"rare": user.rare_s, "super_rare": user.super_rare_s, "epic": user.epic_s,
+                             "mythic": user.mythic_s, "legendary": user.legendary_s, "": user.none_s}
+            _rarity = random.choices(list(rarity_percents.keys()), weights=list(rarity_percents.values()))[0]
+            print("выпала редкость:", _rarity)
 
-        # Логика выпадения NFT
-        if random.random() < 0.10:  # 10% шанс на выпадение NFT
-            rarity_roll = random.random()
-            if rarity_roll < 0.005:
-                rarity = 'godlike'
-            elif rarity_roll < 0.01:
-                rarity = 'legendary'
-            elif rarity_roll < 0.06:
-                rarity = 'epic'
-            elif rarity_roll < 0.16:
-                rarity = 'rare'
-            elif rarity_roll < 0.46:
-                rarity = 'uncommon'
-            else:
-                rarity = 'common'
+            rarity_percents, rarity_strike = Brawlers.chance_rarity_changer(_rarity, rarity_percents, rarity_strike)
+            user.RARITY_r_s(rarity_percents, rarity_strike, db_sess)
+            response_data = None
 
-            nfts_of_rarity = db_sess.query(NFT).filter(
-                NFT.collection_id == collection.id,
-                NFT.rarity == rarity
-            ).all()
+            if _rarity:
+                rarity_percents_br = {"rare": user.rare_br, "super_rare": user.super_rare_br, "epic": user.epic_br,
+                                      "mythic": user.mythic_br, "legendary": user.legendary_br}
+                rarity_strike_br = {"rare": user.rare_s_br, "super_rare": user.super_rare_s_br, "epic": user.epic_s_br,
+                                    "mythic": user.mythic_s_br, "legendary": user.legendary_s_br}
 
-            if nfts_of_rarity:
-                nft_received = random.choice(nfts_of_rarity)
-
-                user_inventory_path = f"./users_jsons/{user.email}.json"
-
-                if os.path.exists(user_inventory_path):
-                    with open(user_inventory_path, "r") as user_json:
-                        inventory_data = json.load(user_json)
-                else:
-                    inventory_data = {}
-
-                collection_name = collection.name
-
-                if collection_name not in inventory_data:
-                    inventory_data[collection_name] = {}
-
-                nft_name = nft_received.name
-
-                if nft_name in inventory_data[collection_name]:
-                    inventory_data[collection_name][nft_name] += 1
-                else:
-                    inventory_data[collection_name][nft_name] = 1
-
-                with open(user_inventory_path, "w") as user_json:
-                    json.dump(inventory_data, user_json)
-
-        response_data = {
-            'click_count': user.click_count,
-            'nft_received': {
-                'id': nft_received.id,
-                'name': nft_received.name,
-                'rarity': nft_received.rarity,
-            } if nft_received else None
-        }
-
-        return response_data, 200
+                i_cant_be_r = []
+                while True:
+                    _rarity_as_br = \
+                    random.choices(list(rarity_percents_br.keys()), weights=list(rarity_percents_br.values()))[0]
+                    if _rarity_as_br in i_cant_be_r:
+                        continue
+                    this_rarity_rarity_nfts = db_sess.query(NFT).filter(NFT.rarity == _rarity,
+                                                                        NFT.collection_id == collection_id,
+                                                                        NFT.rarities_as_brawler.like(f"%{_rarity_as_br}%")).all()
+                    if len(i_cant_be_r) == 5:
+                        break
+                    if not this_rarity_rarity_nfts:
+                        i_cant_be_r.append(_rarity)
+                        continue
+                    rarity_percents_br, rarity_strike_br = Brawlers.chance_rarity_as_brawler_changer(_rarity_as_br,
+                                                                                                     rarity_percents_br,
+                                                                                                     rarity_strike_br)
+                    user.BRAWLER_r_s(rarity_percents_br, rarity_strike_br, db_sess)
+                    classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer, "sniper": user.sniper,
+                                       "tank": user.tank}
+                    classes_strike = {"healer": user.healer_s, "damage_dealer": user.damage_dealer_s,
+                                      "sniper": user.sniper_s,
+                                      "tank": user.tank_s}
+                    i_cant_be_c = []
+                    while True:
+                        _class = random.choices(list(classes_percent.keys()), weights=list(classes_percent.values()))[0]
+                        if _class in i_cant_be_c:
+                            continue
+                        this_rarity_rarity_class_nfts = list(
+                            filter(lambda _nft: _class in _nft.classes_as_brawler, this_rarity_rarity_nfts))
+                        if not this_rarity_rarity_class_nfts:
+                            i_cant_be_c.append(_class)
+                            continue
+                        if len(i_cant_be_c) == 4:
+                            break
+                        classes_percent, classes_strike = Brawlers.chance_class_changer(_class, classes_percent,
+                                                                                        classes_strike)
+                        user.CLASS_r_s(classes_percent, classes_strike, db_sess)
+                        _nft_ = random.choices(this_rarity_rarity_class_nfts)[0]
+                        inventory_path = f".users_json/{user.email}.json"
+                        if os.path.exists(inventory_path):
+                            with open(inventory_path, "r", encoding="utf8") as user_json:
+                                inventory_data = json.load(user_json)
+                        else:
+                            inventory_data = {}
+                        this_nft_id_list = inventory_data.get(str(_nft_.id), [])
+                        this_nft_id_list.append({"rarity": _rarity_as_br, "brawler": _class})
+                        inventory_data[str(_nft_.id)] = this_nft_id_list
+                        with open(inventory_path, "w") as user_json:
+                            json.dump(inventory_data, user_json)
+                        response_data = {'click_count': user.click_count,
+                                         'nft_received': {
+                                             "id": _nft_.id,
+                                             "name": _nft_.name,
+                                             "rarity": _nft_.rarity}}
+                        break
+                    break
+            db_sess.close()
+            return {"click_count": user.click_count, "response_data": response_data}, 200
+        except Exception as e:
+            print(e)
 
 
 class MiningResourse(Resource):

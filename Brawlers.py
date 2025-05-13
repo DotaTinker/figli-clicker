@@ -6,6 +6,9 @@ classes_persent = {"healer": 25, "damage_dealer": 25, "sniper": 25, "tank": 25}
 classes_strike = {"healer": 0, "damage_dealer": 0, "sniper": 0, "tank": 0}
 rarity_percents = {"rare": 1, "super_rare": 0.7, "epic": 0.5, "mythic": 0.25, "legendary": 0.04, "": 97.51}
 rarity_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0, "": 0}
+rarity_as_brawler_percents = {"rare": 48, "super_rare": 30, "epic": 16, "mythic": 5, "legendary": 1}
+rarity_as_brawler_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0}
+
 
 def chance_class_changer(_class, classes_persent, classes_strike):
     classes_persent_2 = classes_persent.copy()
@@ -56,7 +59,8 @@ def chance_class_changer(_class, classes_persent, classes_strike):
             classes_persent.values())
     return classes_persent, classes_strike
 
-def chance_rarity_changer(_rarity, rarity_strike, rarity_percents):
+
+def chance_rarity_changer(_rarity, rarity_percents, rarity_strike):
     for k in rarity_strike.keys():
         if k != _rarity:
             rarity_strike[k] = 0
@@ -94,7 +98,45 @@ def chance_rarity_changer(_rarity, rarity_strike, rarity_percents):
                 rarity_percents[k] += minus / 100 * 50
     a = 100 - sum(rarity_percents.values())
     rarity_percents[random.choices(list(rarity_percents.keys()))[0]] += a
-    return rarity_strike, rarity_percents
+    return rarity_percents, rarity_strike
+
+
+def chance_rarity_as_brawler_changer(_rarity, percents, strike):
+    for k in strike.keys():
+        if k != _rarity:
+            strike[k] = 0
+        else:
+            strike[k] += 1
+    if _rarity == "rare":
+        minus = (1 - math.e ** (-0.1 * strike[_rarity])) * 10
+    elif _rarity == "super_rare":
+        minus = (1 - math.e ** (-0.1 * strike[_rarity])) * 5
+    elif _rarity == "epic":
+        minus = (math.atan(0.2 * strike[_rarity]) / (math.pi / 2)) * 20
+    elif _rarity == "mythic":
+        minus = (1 - math.e ** (-0.05 * math.log(strike[_rarity] + 1))) * 50
+    else:
+        minus = (1 - math.e ** (-0.05 * math.log(strike[_rarity] + 1))) * 10
+    print(minus)
+    percents[_rarity] -= minus
+    if percents[_rarity] < 0:
+        percents[_rarity] = 0
+    for k in percents.keys():
+        if k != _rarity:
+            if k == "legendary":
+                percents[k] += minus / 100 * (random.randrange(100, 200)) / 100
+            elif k == "rare":
+                percents[k] += minus / 100 * 48
+            elif k == "super_rare":
+                percents[k] += minus / 100 * 30
+            elif k == "epic":
+                percents[k] += minus / 100 * 16
+            elif k == "mythic":
+                percents[k] += minus / 100 * 5
+    a = 100 - sum(percents.values())
+    percents[random.choices(list(percents.keys()))[0]] += a
+    return percents, strike
+
 
 class BaseBrawler:
     def __init__(self, rarity, team, x, y):
@@ -197,6 +239,7 @@ class BaseBrawler:
             self.xp += amount
         self.xps.append(self.xp)
 
+
 class DamageDealer(BaseBrawler):
     def init_2(self):
         if self.rarity == "rare":
@@ -241,6 +284,7 @@ class DamageDealer(BaseBrawler):
 
     def step(self, field):
         self.attack(field)
+
 
 class Sniper(BaseBrawler):
     def init_2(self):
@@ -622,51 +666,3 @@ class FieldTest:
                     row.append("-")
             print(row)
 
-"""
-def ff(f, ll):
-    for y in range(10):
-        for x in range(10):
-            if ll[y][x]:
-                team = "blue" if ll[y][x][1] == 'b' else "red"
-                if ll[y][x][0] == 's':
-                    f.add_brawler(Sniper("legendary", team, x, y))
-                if ll[y][x][0] == 'd':
-                    f.add_brawler(DamageDealer("legendary", team, x, y))
-                if ll[y][x][0] == 't':
-                    f.add_brawler(Tank("legendary", team, x, y))
-                if ll[y][x][0] == 'h':
-                    f.add_brawler(Healer("epic", team, x, y))
-
-
-
-matrix = [
-    ['dr', 'sr', 'hr', 'tr', 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ['db', 'sb', 'hb', 'tb', 0, 0, 0, 0, 0, 0]
-]
-f = Field("blue")
-ff(f, matrix)
-f.create_team_lists()
-while True:
-    f.step()
-    f.print_field()
-    if f.winner:
-        print(f.winner)
-        break
-    wait(5000)
-    print()
-    print()
-
-"""
-'''h = Healer("legs", "blue", 15, 15)
-f2 = FieldTest()
-f2.add_brawler(h)
-h.attack(f2)
-f2.print_field()'''

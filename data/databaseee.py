@@ -4,6 +4,12 @@ from data.db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy.orm import relationship
+classes_persent = {"healer": 25, "damage_dealer": 25, "sniper": 25, "tank": 25}
+classes_strike = {"healer": 0, "damage_dealer": 0, "sniper": 0, "tank": 0}
+rarity_percents = {"rare": 1, "super_rare": 0.7, "epic": 0.5, "mythic": 0.25, "legendary": 0.04, "": 97.51}
+rarity_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0, "": 0}
+rarity_as_brawler_percents = {"rare": 48, "super_rare": 30, "epic": 16, "mythic": 5, "legendary": 1}
+rarity_as_brawler_strike = {"rare": 0, "super_rare": 0, "epic": 0, "mythic": 0, "legendary": 0}
 
 
 class User(SqlAlchemyBase, UserMixin):
@@ -34,6 +40,17 @@ class User(SqlAlchemyBase, UserMixin):
     mythic_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     legendary_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     none_s = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    # шансы на редкость бравлеров и страйки
+    rare_br = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    super_rare_br = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    epic_br = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    mythic_br = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    legendary_br = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
+    rare_s_br = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    super_rare_s_br = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    epic_s_br = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    mythic_s_br = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    legendary_s_br = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     # далее шансы на классы и серии выпадений классов
     damage_dealer = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
     sniper = sqlalchemy.Column(sqlalchemy.FLOAT, nullable=True)
@@ -71,6 +88,91 @@ class User(SqlAlchemyBase, UserMixin):
         if only:
             return {key: data[key] for key in only if key in data}
         return data
+
+    def all_chances_to_default(self, session):
+        self.RARITY_r_s(rarity_percents, rarity_strike, session)
+        self.BRAWLER_r_s(rarity_as_brawler_percents, rarity_as_brawler_strike, session)
+        self.CLASS_r_s(classes_persent, classes_strike, session)
+
+    def RARITY_r_s(self, r_p, r_s, session):
+        for k, v in r_p.items():
+            if k == "rare":
+                self.rare = v
+            elif k == "super_rare":
+                self.super_rare = v
+            elif k == "epic":
+                self.epic = v
+            elif k == "mythic":
+                self.mythic = v
+            elif k == "legendary":
+                self.legendary = v
+            else:
+                self.none = v
+            session.commit()
+
+        for k, v in r_s.items():
+            if k == "rare":
+                self.rare_s = v
+            elif k == "super_rare":
+                self.super_rare_s = v
+            elif k == "epic":
+                self.epic_s = v
+            elif k == "mythic":
+                self.mythic_s = v
+            elif k == "legendary":
+                self.legendary_s = v
+            else:
+                self.none_s = v
+            session.commit()
+
+    def BRAWLER_r_s(self, r_p, r_s, session):
+        for k, v in r_p.items():
+            if k == "rare":
+                self.rare_br = v
+            elif k == "super_rare":
+                self.super_rare_br = v
+            elif k == "epic":
+                self.epic_br = v
+            elif k == "mythic":
+                self.mythic_br = v
+            elif k == "legendary":
+                self.legendary_br = v
+            session.commit()
+
+        for k, v in r_s.items():
+            if k == "rare":
+                self.rare_s_br = v
+            elif k == "super_rare":
+                self.super_rare_s_br = v
+            elif k == "epic":
+                self.epic_s_br = v
+            elif k == "mythic":
+                self.mythic_s_br = v
+            elif k == "legendary":
+                self.legendary_s_br = v
+            session.commit()
+
+    def CLASS_r_s(self, c_p, c_s, session):
+        for k, v in c_p.items():
+            if k == "healer":
+                self.healer = v
+            if k == "tank":
+                self.tank = v
+            if k == "sniper":
+                self.sniper = v
+            if k == "damage_dealer":
+                self.damage_dealer = v
+            session.commit()
+        for k, v in c_s.items():
+            if k == "healer":
+                self.healer_s = v
+            if k == "tank":
+                self.tank_s = v
+            if k == "sniper":
+                self.sniper_s = v
+            if k == "damage_dealer":
+                self.damage_dealer_s = v
+            session.commit()
 
 
 class Collection(SqlAlchemyBase):
