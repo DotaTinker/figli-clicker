@@ -1,19 +1,49 @@
 {% extends "base.html" %}
 
+{% block title %}Профиль пользователя{% endblock %}
+
 {% block content %}
-    <div class="container-fluid" style="background: linear-gradient(#5A7FC8, #9A4D87);
-                border: solid 10px #000000;
-                margin: 10px;
-                box-sizing: border-box;">
-        <p>Имя: {{ User.name }}</p>
-        <p>Нмя пользователя: {{ User.user_name }}</p>
-        <p>figli-коины: {{ User.figli_coins }}</p>
-        <p>email: {{ User.email }}</p>
-        {% for collection, nfts in json.items() %}
-            {% for name, number in nfts.items() %}
-                <p>{{collection}} {{name}} {{number}}</p>
-            {% endfor %}
-        {% endfor %}
-        
-    </div>
+<h1>Профиль пользователя</h1>
+
+<div id="user-info">
+    <p>Загрузка данных...</p>
+</div>
+
+<h2>Инвентарь</h2>
+<div id="inventory-container">
+    <p>Загрузка инвентаря...</p>
+</div>
+
+<script>
+  // Передача user_id из Flask
+  const userId = {{ user_id }};
+
+  // Загружаем данные пользователя
+  fetch(`/api/user/${userId}`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Ошибка при загрузке данных');
+      }
+      return res.json();
+    })
+    .then(data => {
+      const user = data.user;
+      const infoDiv = document.getElementById('user-info');
+
+      // Формируем HTML с данными пользователя
+      infoDiv.innerHTML = `
+        <p><strong>ID:</strong> ${user.id}</p>
+        <p><strong>Имя:</strong> ${user.name}</p>
+        <p><strong>Никнейм:</strong> ${user.user_name}</p>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>FGL:</strong> ${user.figli_coins}</p>
+      `;
+    })
+    .catch(error => {
+      document.getElementById('user-info').innerHTML = '<p>Не удалось загрузить данные пользователя.</p>';
+      console.error(error);
+    });
+
+</script>
+
 {% endblock %}

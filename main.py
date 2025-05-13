@@ -18,8 +18,10 @@ api.add_resource(resources.ClickerResource, '/api/clicker/<int:collection_id>/cl
 api.add_resource(resources.MiningResourse, '/api/mining/<int:user_id>')
 api.add_resource(resources.CollectionListResource, '/api/collections')
 api.add_resource(resources.UserListResource, '/api/v2/users')
+api.add_resource(resources.UserResource, '/api/user/<int:user_id>')
 api.add_resource(resources.TradingListResourse, '/api/trading')
 api.add_resource(resources.TradingResourse, "/api/purchase/<int:trade_id>/<string:buyer_email>")
+api.add_resource(resources.NftResourse, "/api/nft/<int:id_nft>")
 
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -60,12 +62,14 @@ def admin_required(f):  # декоратор недопускающий люде
 
 
 @app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
+def uploaded_file(
+        filename):  # функция помогающая загружать картинки в ХТМЛ используя папку в которую мы загружаем картинки
     return send_from_directory(COLL_AND_NFTS_FOLDER, filename)
 
 
 @app.route('/inventory/<user_email>', methods=['GET'])
 def get_inventory(user_email):
+    """функция которая выдает инвентарь пользователя в виде джейсона, пока не используется"""
     user_inventory_path = f"./users_jsons/{user_email}.json"
 
     if not os.path.exists(user_inventory_path):
@@ -74,11 +78,12 @@ def get_inventory(user_email):
     with open(user_inventory_path, "r") as user_json:
         inventory_data = json.load(user_json)
 
-    return jsonify(inventory_data)
+    return inventory_data
 
 
 @app.route('/signin', methods=['GET', 'POST'])
 def login():
+    """функция отвечающая за авторизацию"""
     form = SignInForm()
     if form.validate_on_submit():
         data = {
@@ -97,6 +102,7 @@ def login():
 
 @app.route("/signup", methods=['GET', 'POST'])
 def signup():
+    """функция отвечающая за регистрацию"""
     form = SignUpForm()
     if form.validate_on_submit():
         if form.password1.data != form.password2.data:
@@ -132,6 +138,7 @@ def signup():
 
 @login_manager.user_loader
 def load_user(user_id):
+    """загружате данные пользователя, пока не используется"""
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
@@ -139,6 +146,7 @@ def load_user(user_id):
 @app.route('/index')
 @app.route('/')
 def index():
+    """домашняя страница на которой находится список доступных кликеров"""
     db_sess = db_session.create_session()
     collections = db_sess.query(Collection).all()
     return render_template('home.html', collections=collections)
@@ -147,6 +155,7 @@ def index():
 @app.route('/clicker/<int:collection_id>', methods=['GET'])
 @login_required
 def clicker(collection_id):
+    """в хтмл файл передается информация о том какую коллекцию мы кликаем и в зависимости от этого получаем предметы"""
     db_sess = db_session.create_session()
     collection = db_sess.query(Collection).filter(Collection.id == collection_id).first()
 
@@ -159,50 +168,47 @@ def clicker(collection_id):
 @app.route('/mining', methods=['GET'])
 @login_required
 def mining():
+    """тут можно заработать монеты, майнинг эмитируется программой которая нагружает компьютер"""
     return render_template('mining.html', coins=current_user.figli_coins)
 
 
 @app.route('/logout')
 @login_required
 def logout():
+    """выход из аккаунта"""
     logout_user()
     return redirect("/")
-
-
-@app.route("/nftmanage")
-@login_required
-@admin_required
-def nftmanage():
-    return render_template("nftmanage.html")
 
 
 @app.route('/add-collections', methods=['GET'])
 @login_required
 @admin_required
 def add_collections():
+    """страница на которой можно создавать коллекции"""
     return render_template('add-collections.html')
 
 
-@app.route("/profile/<string:user_name>", methods=["GET", "POST"])
+@app.route("/profile/<int:user_id>")
 @login_required
-def profile(user_name):
+def profile(user_id):
     db_sess = db_session.create_session()
-    user = db_sess.query(User).filter(User.user_name == user_name).first()
-    if user:
-        with open(f"./users_jsons/{user.email}.json") as user_json:
-            return render_template("profile.html",
-                                   User=user, json=json.load(user_json))
+    user = db_sess.query(User).filter(User.id == user_id).first()
+    a = get_inventory(user.email)
+
+    return render_template("profile.html", user_id=user_id, inventory=json.dumps(a))
 
 
 @app.route("/trading")
 @login_required
 def trading():
+    """торговая площадка"""
     return render_template("trading.html", current_user_id=current_user.email)
 
 
 @app.route("/create_trading")
 @login_required
 def create_trading():
+    """страница на которой можно создать торговый запрос"""
     return render_template("create_traiding.html")
 
 

@@ -4,6 +4,7 @@ from data.db_session import SqlAlchemyBase
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy.orm import relationship
+
 classes_persent = {"healer": 25, "damage_dealer": 25, "sniper": 25, "tank": 25}
 classes_strike = {"healer": 0, "damage_dealer": 0, "sniper": 0, "tank": 0}
 rarity_percents = {"rare": 1, "super_rare": 0.7, "epic": 0.5, "mythic": 0.25, "legendary": 0.04, "": 97.51}
@@ -83,7 +84,8 @@ class User(SqlAlchemyBase, UserMixin):
             'id': self.id,
             'name': self.name,
             'user_name': self.user_name,
-            'email': self.email
+            'email': self.email,
+            "figli_coins": self.figli_coins
         }
         if only:
             return {key: data[key] for key in only if key in data}
@@ -197,6 +199,17 @@ class NFT(SqlAlchemyBase):
     image_path = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     collection_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('collections.id'))
     collection = relationship("Collection", back_populates="nfts")
+
+    def to_dict(self, only=None):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'rarity': self.rarity,
+            'image_path': self.image_path,
+        }
+        if only:
+            return {key: data[key] for key in only if key in data}
+        return data
 
 
 class TradeRequests(SqlAlchemyBase):

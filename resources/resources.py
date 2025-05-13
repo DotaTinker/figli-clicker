@@ -37,6 +37,7 @@ def norm_list(ne_norm_list):
 
 
 def allowed_file(filename):
+    """поддерживаемый формат файла"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
@@ -54,12 +55,31 @@ def abort_if_trade_not_found(trade_id):
         abort(404, message=f"Trade {trade_id} not found")
 
 
+def abort_if_nft_not_found(id_nft):
+    session = db_session.create_session()
+    nft = session.query(NFT).get(id_nft)
+    if not nft:
+        abort(404, message=f"Trade {id_nft} not found")
+
+
+class NftResourse(Resource):
+    """ресурс дял нфт"""
+
+    def get(self, id_nft):
+        abort_if_nft_not_found(id_nft)
+        session = db_session.create_session()
+        nft = session.query(NFT).get(id_nft)
+        return jsonify({'user': nft.to_dict(only=('id', 'name', 'rarity', 'image_path'))})
+
+
 class UserResource(Resource):
+    """ресурс для пользователя"""
+
     def get(self, user_id):
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
-        return jsonify({'user': user.to_dict(only=('id', 'name', 'user_name', 'email'))})
+        return jsonify({'user': user.to_dict(only=('id', 'name', 'user_name', 'email', 'figli_coins'))})
 
     def delete(self, user_id):
         abort_if_user_not_found(user_id)
@@ -71,6 +91,8 @@ class UserResource(Resource):
 
 
 class UserListResource(Resource):
+    """ресурс для списка пользователей"""
+
     def get(self):
         session = db_session.create_session()
         users = session.query(User).all()
@@ -94,6 +116,8 @@ class UserListResource(Resource):
 
 
 class UserSignInResurse(Resource):
+    """авторизация"""
+
     def post(self):
         data = request.get_json()
 
@@ -112,6 +136,8 @@ class UserSignInResurse(Resource):
 
 
 class CollectionListResource(Resource):
+    """добавление новой коллекции с нфт в ней"""
+
     def post(self):
         collection_name = request.form['collection_name']  # Имя коллекции
         collection_image = request.files['collection_image']  # Файл изображения коллекции
@@ -226,6 +252,8 @@ class CollectionListResource(Resource):
 
 
 class ClickerResource(Resource):
+    """обработка клика с выпадением предмета"""
+
     def post(self, collection_id, user_id):
         try:
             print(1)
@@ -247,7 +275,8 @@ class ClickerResource(Resource):
             db_sess.merge(user)
             db_sess.commit()
 
-            rarity_percents = {"rare": user.rare, "super_rare": user.super_rare, "epic": user.epic, "mythic": user.mythic,
+            rarity_percents = {"rare": user.rare, "super_rare": user.super_rare, "epic": user.epic,
+                               "mythic": user.mythic,
                                "legendary": user.legendary, "": user.none}
             rarity_strike = {"rare": user.rare_s, "super_rare": user.super_rare_s, "epic": user.epic_s,
                              "mythic": user.mythic_s, "legendary": user.legendary_s, "": user.none_s}
@@ -267,12 +296,13 @@ class ClickerResource(Resource):
                 i_cant_be_r = []
                 while True:
                     _rarity_as_br = \
-                    random.choices(list(rarity_percents_br.keys()), weights=list(rarity_percents_br.values()))[0]
+                        random.choices(list(rarity_percents_br.keys()), weights=list(rarity_percents_br.values()))[0]
                     if _rarity_as_br in i_cant_be_r:
                         continue
                     this_rarity_rarity_nfts = db_sess.query(NFT).filter(NFT.rarity == _rarity,
                                                                         NFT.collection_id == collection_id,
-                                                                        NFT.rarities_as_brawler.like(f"%{_rarity_as_br}%")).all()
+                                                                        NFT.rarities_as_brawler.like(
+                                                                            f"%{_rarity_as_br}%")).all()
                     if len(i_cant_be_r) == 5:
                         break
                     if not this_rarity_rarity_nfts:
@@ -282,7 +312,8 @@ class ClickerResource(Resource):
                                                                                                      rarity_percents_br,
                                                                                                      rarity_strike_br)
                     user.BRAWLER_r_s(rarity_percents_br, rarity_strike_br, db_sess)
-                    classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer, "sniper": user.sniper,
+                    classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer,
+                                       "sniper": user.sniper,
                                        "tank": user.tank}
                     classes_strike = {"healer": user.healer_s, "damage_dealer": user.damage_dealer_s,
                                       "sniper": user.sniper_s,
@@ -314,8 +345,6 @@ class ClickerResource(Resource):
                         inventory_data[str(_nft_.id)] = this_nft_id_list
                         with open(inventory_path, "w") as user_json:
                             json.dump(inventory_data, user_json)
-                        print(2)
-                        print(this_nft_id_list)
                         response_data = {'click_count': user.click_count,
                                          'nft_received': {
                                              "id": _nft_.id,
@@ -330,6 +359,8 @@ class ClickerResource(Resource):
 
 
 class MiningResourse(Resource):
+    """выдача монеты за майнинг"""
+
     def post(self, user_id):
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == user_id).first()
@@ -345,6 +376,8 @@ class MiningResourse(Resource):
 
 
 class TradingListResourse(Resource):
+    """получение запросов на торговлю и добавление новых"""
+
     def get(self):
         session = db_session.create_session()
 
@@ -436,16 +469,10 @@ class TradingListResourse(Resource):
 
 
 class TradingResourse(Resource):
-    def get(self, trade_id):
-        abort_if_trade_not_found(trade_id)
-        session = db_session.create_session()
-        news = session.query(TradeRequests).get(trade_id)
-        return jsonify({'news': news.to_dict(
-            only=('title', 'content', 'user_id', 'is_private'))})
+    """обработка покупки нфт"""
 
     def post(self, trade_id, buyer_email):
         session = db_session.create_session()
-
 
         # Получаем торговый запрос по ID
         trade_request = session.query(TradeRequests).get(trade_id)
@@ -458,40 +485,73 @@ class TradingResourse(Resource):
         if not buyer:
             return {'message': 'Покупатель не найден'}, 404
 
-        # Проверяем наличие средств у покупателя
-        if buyer.figli_coins < trade_request.cost:
-            return {'message': 'Недостаточно средств для покупки'}, 400
-
-        # Списываем средства с покупателя и переводим продавцу (предполагается, что seller_email хранится в trade_request)
+        # Получаем продавца
         seller = session.query(User).filter(User.email == trade_request.user_email).first()
 
-        buyer.figli_coins -= trade_request.cost
-        seller.figli_coins += trade_request.cost
+        if not seller:
+            return {'message': 'Продавец не найден'}, 404
 
-        # Добавляем NFT в инвентарь покупателя с характеристиками
-        nft_data = {
-            "rarity": trade_request.brawler_rarity,
-            "brawler": trade_request.brawler_class
-        }
+        # Проверка: покупает ли пользователь у самого себя
+        if seller.id == buyer.id:
+            # В этом случае просто удаляем запрос и возвращаем NFT в инвентарь покупателя
+            nft_data = {
+                "rarity": trade_request.brawler_rarity,
+                "brawler": trade_request.brawler_class
+            }
 
-        buyer_inventory_path = f"./users_jsons/{buyer_email}.json"
+            buyer_inventory_path = f"./users_jsons/{buyer_email}.json"
 
-        if os.path.exists(buyer_inventory_path):
-            with open(buyer_inventory_path, "r") as buyer_json:
-                buyer_inventory_data = json.load(buyer_json)
+            if os.path.exists(buyer_inventory_path):
+                with open(buyer_inventory_path, "r") as buyer_json:
+                    buyer_inventory_data = json.load(buyer_json)
 
-            if str(trade_request.id_nft) not in buyer_inventory_data:
-                buyer_inventory_data[str(trade_request.id_nft)] = []  # Инициализируем список для нового NFT
+                if str(trade_request.id_nft) not in buyer_inventory_data:
+                    buyer_inventory_data[str(trade_request.id_nft)] = []
 
-            buyer_inventory_data[str(trade_request.id_nft)].append(nft_data)  # Добавляем характеристики NFT в инвентарь
+                buyer_inventory_data[str(trade_request.id_nft)].append(nft_data)
 
-            with open(buyer_inventory_path, "w") as buyer_json:
-                json.dump(buyer_inventory_data, buyer_json)
+                with open(buyer_inventory_path, "w") as buyer_json:
+                    json.dump(buyer_inventory_data, buyer_json)
 
-        # Удаляем торговый запрос после завершения сделки
-        session.delete(trade_request)
+            # Удаляем торговый запрос после завершения сделки
+            session.delete(trade_request)
+            session.commit()
 
-        # Сохраняем изменения в базе данных
-        session.commit()
+            return {'message': 'Торговый запрос отменен. NFT возвращен в инвентарь.'}, 200
 
-        return {'message': 'Успешная покупка'}, 201
+        else:
+            # Обработка обычной покупки у другого пользователя
+
+            # Проверяем наличие средств у покупателя
+            if buyer.figli_coins < trade_request.cost:
+                return {'message': 'Недостаточно средств для покупки'}, 400
+
+            # Списываем средства с покупателя и переводим продавцу
+            seller.figli_coins += trade_request.cost
+            buyer.figli_coins -= trade_request.cost
+
+            # Добавляем NFT в инвентарь покупателя с характеристиками
+            nft_data = {
+                "rarity": trade_request.brawler_rarity,
+                "brawler": trade_request.brawler_class
+            }
+
+            buyer_inventory_path = f"./users_jsons/{buyer_email}.json"
+
+            if os.path.exists(buyer_inventory_path):
+                with open(buyer_inventory_path, "r") as buyer_json:
+                    buyer_inventory_data = json.load(buyer_json)
+
+                if str(trade_request.id_nft) not in buyer_inventory_data:
+                    buyer_inventory_data[str(trade_request.id_nft)] = []
+
+                buyer_inventory_data[str(trade_request.id_nft)].append(nft_data)
+
+                with open(buyer_inventory_path, "w") as buyer_json:
+                    json.dump(buyer_inventory_data, buyer_json)
+
+            # Удаляем торговый запрос после завершения сделки
+            session.delete(trade_request)
+            session.commit()
+
+            return {'message': 'Успешная покупка'}, 201
