@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, request, send_from_directory, jsonify
 from data import db_session
-from data.databaseee import User, Collection
+from data.databaseee import User, Collection, NFT
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from forms.databaseee_forms import SignUpForm, SignInForm
 import functools
@@ -191,7 +191,23 @@ def add_collections():
 @app.route("/profile/<int:user_id>")
 @login_required
 def profile(user_id):
-    return render_template("profile.html", user_id=user_id)
+    user_inventory_path = f"./users_jsons/{current_user.email}.json"
+
+    if not os.path.exists(user_inventory_path):
+        return jsonify({'message': 'Инвентарь не найден'}), 404
+
+    with open(user_inventory_path, "r") as user_json:
+        inventory_data = json.load(user_json)
+    list_of_lists = []
+    db_sess = db_session.create_session()
+    for i in inventory_data:
+        for j in inventory_data[i]:
+            nft = db_sess.query(NFT).filter(NFT.id == int(i)).first()
+            if nft:
+                path = f"{nft.collection_id}/nfts/{nft.image_path}"
+                list_of_lists.append([path, nft.name, nft.rarity, j["rarity"], j["brawler"]])
+
+    return render_template("profile.html", user_id=user_id, list=list_of_lists)
 
 
 @app.route("/trading")

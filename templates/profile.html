@@ -9,16 +9,24 @@
     <p>Загрузка данных...</p>
 </div>
 
-<h2>Инвентарь</h2>
-<div id="inventory-container">
-    <p>Загрузка инвентаря...</p>
+<div class="container">
+    <h1>Инвентарь</h1>
+    <div class="nft-list">
+        {% for item in list %}
+            <div class="nft-item">
+                <img src="{{ url_for('uploaded_file', filename=item[0]) }}" alt="{{ item[1] }}" class="nft-image">
+                <p>Название: {{ item[1] }}</p>
+                <p>Редкость: {{ item[2] }}</p>
+                <p>Редкость Бойца: {{ item[3] }}</p>
+                <p>Класс бойца: {{ item[4] }}</p>
+        {% endfor %}
+    </div>
 </div>
 
+
 <script>
-  // Передача user_id из Flask
   const userId = {{ user_id }};
 
-  // Загружаем данные пользователя
   fetch(`/api/user/${userId}`)
     .then(res => {
       if (!res.ok) {
@@ -30,7 +38,6 @@
       const user = data.user;
       const infoDiv = document.getElementById('user-info');
 
-      // Формируем HTML с данными пользователя
       infoDiv.innerHTML = `
         <p><strong>ID:</strong> ${user.id}</p>
         <p><strong>Имя:</strong> ${user.name}</p>
