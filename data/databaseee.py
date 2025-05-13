@@ -176,8 +176,7 @@ class User(SqlAlchemyBase, UserMixin):
 
 
 class Collection(SqlAlchemyBase):
-    """Имя коллекции уникально и используется для записи в json файл о пользователе,
-        это упрощает переименование и удаление коллекций, т.к id - автоинкрементен"""
+    """База данных в которой хранятся коллекции"""
     __tablename__ = 'collections'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
@@ -187,8 +186,7 @@ class Collection(SqlAlchemyBase):
 
 
 class NFT(SqlAlchemyBase):
-    """Имя nft уникально и используется для записи в json файл о пользователе,
-        это упрощает переименование и удаление nft, т.к id - автоинкрементен"""
+    """База данных в которой хранятся нфт"""
     __tablename__ = 'nfts'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)

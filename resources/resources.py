@@ -243,6 +243,7 @@ class ClickerResource(Resource):
 
             # Увеличиваем счетчик нажатий пользователя
             user.click_count = (user.click_count or 0) + 1
+            click = user.click_count
             db_sess.merge(user)
             db_sess.commit()
 
@@ -313,6 +314,8 @@ class ClickerResource(Resource):
                         inventory_data[str(_nft_.id)] = this_nft_id_list
                         with open(inventory_path, "w") as user_json:
                             json.dump(inventory_data, user_json)
+                        print(2)
+                        print(this_nft_id_list)
                         response_data = {'click_count': user.click_count,
                                          'nft_received': {
                                              "id": _nft_.id,
@@ -321,7 +324,7 @@ class ClickerResource(Resource):
                         break
                     break
             db_sess.close()
-            return {"click_count": user.click_count, "response_data": response_data}, 200
+            return {"click_count": click, "response_data": None}, 200
         except Exception as e:
             print(e)
 
