@@ -69,7 +69,7 @@ def uploaded_file(
 
 @app.route('/inventory/<user_email>', methods=['GET'])
 def get_inventory(user_email):
-    """функция которая выдает инвентарь пользователя в виде джейсона, пока не используется"""
+    """функция которая выдает инвентарь пользователя в виде джейсона"""
     user_inventory_path = f"./users_jsons/{user_email}.json"
 
     if not os.path.exists(user_inventory_path):
@@ -138,7 +138,7 @@ def signup():
 
 @login_manager.user_loader
 def load_user(user_id):
-    """загружате данные пользователя, пока не используется"""
+    """загружате данные пользователя"""
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
@@ -191,11 +191,7 @@ def add_collections():
 @app.route("/profile/<int:user_id>")
 @login_required
 def profile(user_id):
-    db_sess = db_session.create_session()
-    user = db_sess.query(User).filter(User.id == user_id).first()
-    a = get_inventory(user.email)
-
-    return render_template("profile.html", user_id=user_id, inventory=json.dumps(a))
+    return render_template("profile.html", user_id=user_id)
 
 
 @app.route("/trading")

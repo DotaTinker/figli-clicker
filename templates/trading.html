@@ -76,7 +76,7 @@
 let nftData = [];
 
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/trading') // Замените на ваш API
+    fetch('/api/trading')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Сеть ответила с ошибкой ' + response.status);
