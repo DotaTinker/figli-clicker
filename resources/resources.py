@@ -47,18 +47,11 @@ def abort_if_user_not_found(user_id):
         abort(404, message=f"User {user_id} not found")
 
 
-def abort_if_collection_not_found(collection_id):
+def abort_if_trade_not_found(trade_id):
     session = db_session.create_session()
-    collection = session.query(Collection).get(collection_id)
-    if not collection:
-        abort(404, message=f"Collection {collection_id} not found")
-
-
-def abort_if_nft_not_found(nft_id):
-    session = db_session.create_session()
-    nft = session.query(NFT).get(nft_id)
-    if not nft:
-        abort(404, message=f"NFT {nft_id} not found")
+    user = session.query(TradeRequests).get(trade_id)
+    if not user:
+        abort(404, message=f"Trade {trade_id} not found")
 
 
 class UserResource(Resource):
@@ -351,9 +344,29 @@ class MiningResourse(Resource):
 class TradingListResourse(Resource):
     def get(self):
         session = db_session.create_session()
-        trade = session.query(TradeRequests).all()
-        return jsonify({'trade_post': [item.to_dict(
-            only=('user_email', 'id_nft', 'brawler_class', "brawler_rarity")) for item in trade]})
+
+        # Получаем все запросы на торговлю с информацией о NFT
+        trade_requests = session.query(TradeRequests).all()
+
+        response_data = []
+        for i in trade_requests:
+            print(i.id_nft)
+            nft = session.query(NFT).filter(NFT.id == i.id_nft).first()
+            if nft:
+                response_data.append({
+                    "trade_id": i.id,
+                    'user_email': i.user_email,
+                    'id_nft': i.id_nft,
+                    'brawler_class': i.brawler_class,
+                    'brawler_rarity': i.brawler_rarity,
+                    'cost': i.cost,
+                    'nft_name': nft.name,
+                    'nft_rarity': nft.rarity,
+                    'image_path': f"uploads/{nft.collection_id}/nfts/{nft.image_path}"
+                })
+        print(response_data)
+
+        return jsonify({'trade_post': response_data})
 
     def post(self):
         data = request.get_json()
@@ -417,3 +430,65 @@ class TradingListResourse(Resource):
             session.commit()
 
             return {'message': 'Запрос на торговлю успешно создан'}, 201
+
+
+class TradingResourse(Resource):
+    def get(self, trade_id):
+        abort_if_trade_not_found(trade_id)
+        session = db_session.create_session()
+        news = session.query(TradeRequests).get(trade_id)
+        return jsonify({'news': news.to_dict(
+            only=('title', 'content', 'user_id', 'is_private'))})
+
+    def post(self, trade_id, buyer_email):
+        session = db_session.create_session()
+
+
+        # Получаем торговый запрос по ID
+        trade_request = session.query(TradeRequests).get(trade_id)
+
+        if not trade_request:
+            return {'message': 'Торговый запрос не найден'}, 404
+
+        buyer = session.query(User).filter(User.email == buyer_email).first()
+
+        if not buyer:
+            return {'message': 'Покупатель не найден'}, 404
+
+        # Проверяем наличие средств у покупателя
+        if buyer.figli_coins < trade_request.cost:
+            return {'message': 'Недостаточно средств для покупки'}, 400
+
+        # Списываем средства с покупателя и переводим продавцу (предполагается, что seller_email хранится в trade_request)
+        seller = session.query(User).filter(User.email == trade_request.user_email).first()
+
+        buyer.figli_coins -= trade_request.cost
+        seller.figli_coins += trade_request.cost
+
+        # Добавляем NFT в инвентарь покупателя с характеристиками
+        nft_data = {
+            "rarity": trade_request.brawler_rarity,
+            "brawler": trade_request.brawler_class
+        }
+
+        buyer_inventory_path = f"./users_jsons/{buyer_email}.json"
+
+        if os.path.exists(buyer_inventory_path):
+            with open(buyer_inventory_path, "r") as buyer_json:
+                buyer_inventory_data = json.load(buyer_json)
+
+            if str(trade_request.id_nft) not in buyer_inventory_data:
+                buyer_inventory_data[str(trade_request.id_nft)] = []  # Инициализируем список для нового NFT
+
+            buyer_inventory_data[str(trade_request.id_nft)].append(nft_data)  # Добавляем характеристики NFT в инвентарь
+
+            with open(buyer_inventory_path, "w") as buyer_json:
+                json.dump(buyer_inventory_data, buyer_json)
+
+        # Удаляем торговый запрос после завершения сделки
+        session.delete(trade_request)
+
+        # Сохраняем изменения в базе данных
+        session.commit()
+
+        return {'message': 'Успешная покупка'}, 201

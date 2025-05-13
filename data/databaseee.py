@@ -211,3 +211,15 @@ class TradeRequests(SqlAlchemyBase):
     brawler_class = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     brawler_rarity = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     cost = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+
+    def to_dict(self, only=None):
+        data = {
+            'id_nft': self.id_nft,
+            'user_email': self.user_email,
+            'brawler_class': self.brawler_class,
+            'brawler_rarity': self.brawler_rarity,
+            "cost": self.cost
+        }
+        if only:
+            return {key: data[key] for key in only if key in data}
+        return data
