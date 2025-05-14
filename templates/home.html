@@ -1,17 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>Список коллекций NFT</h1>
-    <div class="collection-list">
+<div class="container my-5">
+    <h1 class="text-center mb-4">Список коллекций NFT</h1>
+    <div class="collection-list d-flex flex-wrap justify-content-center gap-4">
         {% for collection in collections %}
-            <div class="collection-item">
-                <a href="{{ url_for('clicker', collection_id=collection.id) }}" class="collection-button">
-                    <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" class="collection-image">
-                    <span class="collection-name">{{ collection.name }}</span>
+            <div class="collection-item card shadow-sm hover-scale" style="width: 200px;">
+                <a href="{{ url_for('clicker', collection_id=collection.id) }}" class="collection-link text-decoration-none text-dark">
+                    <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" class="collection-image card-img-top rounded-top">
+                    <div class="card-body p-2 text-center">
+                        <span class="collection-name h6">{{ collection.name }}</span>
+                    </div>
                 </a>
             </div>
         {% endfor %}
     </div>
 </div>
+
+<!-- Добавим стили для красивого оформления -->
+<style>
+    /* Цвет фона страницы */
+    body {
+        background-color: #f0f4f8; /* светлый голубовато-серый фон */
+        font-family: 'Arial', sans-serif;
+    }
+
+    /* Эффект при наведении на карточку */
+    .hover-scale:hover {
+        transform: scale(1.05);
+        transition: transform 0.3s ease;
+    }
+
+    /* Карточки коллекций */
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #ffffff; /* белый фон карточки */
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Тень при наведении */
+    .card:hover {
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    /* Изображение коллекции */
+    .collection-image {
+        height: 150px;
+        object-fit: cover;
+    }
+
+    /* Название коллекции */
+    .collection-name {
+        color: #333;
+        font-weight: bold;
+    }
+
+    /* Удаление стандартных стилей ссылок внутри карточек */
+    .collection-link {
+        display: block;
+        height: 100%;
+        color: inherit;
+        text-decoration: none;
+    }
+</style>
 {% endblock %}

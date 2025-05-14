@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 <form id="trade-form">
     <label for="nft-select">Выберите предмет для торговли:</label>
     <select id="nft-select" name="id_nft">
@@ -72,3 +75,4 @@ document.getElementById('trade-form').addEventListener('submit', function(event)
     });
 });
 </script>
+{% endblock %}

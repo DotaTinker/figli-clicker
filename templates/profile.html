@@ -10,47 +10,131 @@
 </div>
 
 <div class="container">
-    <h1>Инвентарь</h1>
+    <h2>Инвентарь</h2>
     <div class="nft-list">
         {% for item in list %}
-            <div class="nft-item">
-                <img src="{{ url_for('uploaded_file', filename=item[0]) }}" alt="{{ item[1] }}" class="nft-image">
-                <p>Название: {{ item[1] }}</p>
-                <p>Редкость: {{ item[2] }}</p>
-                <p>Редкость Бойца: {{ item[3] }}</p>
-                <p>Класс бойца: {{ item[4] }}</p>
+        <div class="nft-item">
+            <img src="{{ url_for('uploaded_file', filename=item[0]) }}" alt="{{ item[1] }}" class="nft-image">
+            <p><strong>Название:</strong> {{ item[1] }}</p>
+            <p><strong>Редкость:</strong> {{ item[2] }}</p>
+            <p><strong>Редкость Бойца:</strong> {{ item[3] }}</p>
+            <p><strong>Класс бойца:</strong> {{ item[4] }}</p>
+        </div>
         {% endfor %}
+        {% if list|length ==0 %}
+        <p>Нет доступных предметов.</p>
+        {% endif %}
     </div>
 </div>
 
+<style>
+    /* Общие стили страницы */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      line-height: 1.6;
+      margin: 20px;
+    }
+
+    /* Заголовки */
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    /* Стиль блока информации пользователя */
+    #user-info {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    #user-info p {
+      margin: 8px 0;
+    }
+
+    /* Контейнер инвентаря */
+    .container {
+      max-width: 1000px;
+    }
+
+    /* Заголовок раздела */
+    h2 {
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+
+    /* Стили для списка NFT */
+    .nft-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    /* Карточка NFT */
+    .nft-item {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: calc(25% - 20px);
+      padding:15px;
+
+      display:flex;
+      flex-direction:column;
+
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .nft-item:hover {
+        transform: translateY(-8px);
+        box-shadow:0 12px 24px rgba(0,0,0,0.2);
+    }
+
+    /* Изображение NFT */
+    .nft-image {
+        width:100%;
+        height:auto;
+        border-radius:8px;
+        margin-bottom:10px;
+        object-fit:cover;
+    }
+
+    /* Текст внутри карточки */
+    .nft-item p {
+        margin:6px auto;
+        font-size:14px;
+        color:#555;
+    }
+</style>
 
 <script>
-  const userId = {{ user_id }};
+    const userId = {{ user_id }};
 
-  fetch(`/api/user/${userId}`)
+    fetch(`/api/user/${userId}`)
     .then(res => {
-      if (!res.ok) {
-        throw new Error('Ошибка при загрузке данных');
-      }
-      return res.json();
+        if (!res.ok) throw new Error('Ошибка при загрузке данных');
+        return res.json();
     })
     .then(data => {
-      const user = data.user;
-      const infoDiv = document.getElementById('user-info');
+        const user = data.user;
+        const infoDiv = document.getElementById('user-info');
 
-      infoDiv.innerHTML = `
-        <p><strong>ID:</strong> ${user.id}</p>
-        <p><strong>Имя:</strong> ${user.name}</p>
-        <p><strong>Никнейм:</strong> ${user.user_name}</p>
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>FGL:</strong> ${user.figli_coins}</p>
-      `;
+        infoDiv.innerHTML = `
+            <p><strong>ID:</strong> ${user.id}</p>
+            <p><strong>Имя:</strong> ${user.name}</p>
+            <p><strong>Никнейм:</strong> ${user.user_name}</p>
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>FGL:</strong> ${user.figli_coins}</p>
+        `;
     })
     .catch(error => {
-      document.getElementById('user-info').innerHTML = '<p>Не удалось загрузить данные пользователя.</p>';
-      console.error(error);
+        document.getElementById('user-info').innerHTML = '<p>Не удалось загрузить данные пользователя.</p>';
+        console.error(error);
     });
-
 </script>
 
 {% endblock %}

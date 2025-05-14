@@ -6,150 +6,152 @@
     <title>Добавить коллекцию</title>
 </head>
 <body>
-    <h1>Добавить коллекцию NFT</h1>
-    <form id="collection-form" enctype="multipart/form-data">
-        <label for="collection_name">Название коллекции:</label>
-        <input type="text" id="collection_name" name="collection_name" required><br>
+<h1>Добавить коллекцию NFT</h1>
+<form id="collection-form" enctype="multipart/form-data">
+    <label for="collection_name">Название коллекции:</label>
+    <input type="text" id="collection_name" name="collection_name" required><br>
 
-        <label for="collection_image">Изображение коллекции:</label>
-        <input type="file" id="collection_image" name="collection_image" accept="image/*" required><br>
+    <label for="collection_image">Изображение коллекции:</label>
+    <input type="file" id="collection_image" name="collection_image" accept="image/*" required><br>
 
-        <h2>Добавить NFT</h2>
-        <div id="nft-container">
-            <div class="nft-item">
-                <label for="nft_image">Изображение NFT:</label>
-                <input type="file" id="nft_image" name="nft_image[]" accept="image/*" required><br>
-                <label for="nft_name">Имя NFT:</label>
-                <input type="text" id="nft_name" name="nft_name[]" required><br>
-                <label for="nft_rarity">Редкость:</label>
-                <input type="text" id="nft_rarity" name="nft_rarity[]" required><br>
+    <h2>Добавить NFT</h2>
+    <div id="nft-container">
+        <div class="nft-item">
+            <label for="nft_image">Изображение NFT:</label>
+            <input type="file" id="nft_image" name="nft_image[]" accept="image/*" required><br>
+            <label for="nft_name">Имя NFT:</label>
+            <input type="text" id="nft_name" name="nft_name[]" required><br>
+            <label for="nft_rarity">Редкость(common, uncommon, rare, epic, legendary, godlike) если ввести другую то нфт
+                не выпадет:</label>
+            <input type="text" id="nft_rarity" name="nft_rarity[]" required><br>
 
-                <label for="nft_brawler_rarities">Редкости, которыми картинка может быть как бравлер</label>
-                <div id="nft_brawler_rarities">
-                    <label for="rare">rare</label>
-                    <input type="hidden" name="rare" value="">
-                    <input type="checkbox" id="rare" name="rare" value="on"><br>
+            <label for="nft_brawler_rarities">Редкости, которыми картинка может быть как бравлер</label>
+            <div id="nft_brawler_rarities">
+                <label for="rare">rare</label>
+                <input type="hidden" name="rare" value="">
+                <input type="checkbox" id="rare" name="rare" value="on"><br>
 
-                    <label for="super_rare">super_rare</label>
-                    <input type="hidden" name="super_rare" value="">
-                    <input type="checkbox" id="super_rare" name="super_rare" value="on"><br>
+                <label for="super_rare">super_rare</label>
+                <input type="hidden" name="super_rare" value="">
+                <input type="checkbox" id="super_rare" name="super_rare" value="on"><br>
 
-                    <label for="epic">epic</label>
-                    <input type="hidden" name="epic" value="">
-                    <input type="checkbox" id="epic" name="epic" value="on"><br>
+                <label for="epic">epic</label>
+                <input type="hidden" name="epic" value="">
+                <input type="checkbox" id="epic" name="epic" value="on"><br>
 
-                    <label for="mythic">mythic</label>
-                    <input type="hidden" name="mythic" value="">
-                    <input type="checkbox" id="mythic" name="mythic" value="on"><br>
+                <label for="mythic">mythic</label>
+                <input type="hidden" name="mythic" value="">
+                <input type="checkbox" id="mythic" name="mythic" value="on"><br>
 
-                    <label for="legendary">legendary</label>
-                    <input type="hidden" name="legendary" value="">
-                    <input type="checkbox" id="legendary" name="legendary" value="on"><br>
-                </div>
-                <label for="nft_brawler_classes">Классы нфт как бравлера</label>
-                <div id="nft_brawler_classes">
-                    <label for="healer">healer</label>
-                    <input type="hidden" name="healer" value="">
-                    <input type="checkbox" id="healer" name="healer" value="on"><br>
+                <label for="legendary">legendary</label>
+                <input type="hidden" name="legendary" value="">
+                <input type="checkbox" id="legendary" name="legendary" value="on"><br>
+            </div>
+            <label for="nft_brawler_classes">Классы нфт как бравлера</label>
+            <div id="nft_brawler_classes">
+                <label for="healer">healer</label>
+                <input type="hidden" name="healer" value="">
+                <input type="checkbox" id="healer" name="healer" value="on"><br>
 
-                    <label for="sniper">sniper</label>
-                    <input type="hidden" name="sniper" value="">
-                    <input type="checkbox" id="sniper" name="sniper" value="on"><br>
+                <label for="sniper">sniper</label>
+                <input type="hidden" name="sniper" value="">
+                <input type="checkbox" id="sniper" name="sniper" value="on"><br>
 
-                    <label for="damage_dealer">damage_dealer</label>
-                    <input type="hidden" name="damage_dealer" value="">
-                    <input type="checkbox" id="damage_dealer" name="damage_dealer" value="on"><br>
+                <label for="damage_dealer">damage_dealer</label>
+                <input type="hidden" name="damage_dealer" value="">
+                <input type="checkbox" id="damage_dealer" name="damage_dealer" value="on"><br>
 
-                    <label for="tank">tank</label>
-                    <input type="hidden" name="tank" value="">
-                    <input type="checkbox" id="tank" name="tank" value="on"><br>
-                </div>
+                <label for="tank">tank</label>
+                <input type="hidden" name="tank" value="">
+                <input type="checkbox" id="tank" name="tank" value="on"><br>
             </div>
         </div>
+    </div>
 
-        <button type="button" onclick="addNft()">Добавить еще NFT</button><br><br>
+    <button type="button" onclick="addNft()">Добавить еще NFT</button>
+    <br><br>
 
-        <button type="submit">Добавить коллекцию</button>
-    </form>
+    <button type="submit">Добавить коллекцию</button>
+</form>
 
-    <script>
-        function addNft() {
-            const container = document.getElementById('nft-container');
-            const newNft = document.createElement('div');
-            newNft.classList.add('nft-item');
-            newNft.innerHTML = `
-                <label for="nft_image">Изображение NFT:</label>
-                <input type="file" id="nft_image" name="nft_image[]" accept="image/*" required><br>
-                <label for="nft_name">Имя NFT:</label>
-                <input type="text" id="nft_name" name="nft_name[]" required><br>
-                <label for="nft_rarity">Редкость:</label>
-                <input type="text" id="nft_rarity" name="nft_rarity[]" required><br>
+<script>
+    function addNft() {
+        const container = document.getElementById('nft-container');
+        const newNft = document.createElement('div');
+        newNft.classList.add('nft-item');
+        newNft.innerHTML = `
+            <label for="nft_image">Изображение NFT:</label>
+            <input type="file" id="nft_image" name="nft_image[]" accept="image/*" required><br>
+            <label for="nft_name">Имя NFT:</label>
+            <input type="text" id="nft_name" name="nft_name[]" required><br>
+            <label for="nft_rarity">Редкость:</label>
+            <input type="text" id="nft_rarity" name="nft_rarity[]" required><br>
 
-                <label for="nft_brawler_rarities">Редкости, которыми картинка может быть как бравлер</label>
-                <div id="nft_brawler_rarities">
-                    <label for="rare">rare</label>
-                    <input type="hidden" name="rare" value="">
-                    <input type="checkbox" id="rare" name="rare" value="on"><br>
+            <label for="nft_brawler_rarities">Редкости, которыми картинка может быть как бравлер</label>
+            <div id="nft_brawler_rarities">
+                <label for="rare">rare</label>
+                <input type="hidden" name="rare" value="">
+                <input type="checkbox" id="rare" name="rare" value="on"><br>
 
-                    <label for="super_rare">super_rare</label>
-                    <input type="hidden" name="super_rare" value="">
-                    <input type="checkbox" id="super_rare" name="super_rare" value="on"><br>
+                <label for="super_rare">super_rare</label>
+                <input type="hidden" name="super_rare" value="">
+                <input type="checkbox" id="super_rare" name="super_rare" value="on"><br>
 
-                    <label for="epic">epic</label>
-                    <input type="hidden" name="epic" value="">
-                    <input type="checkbox" id="epic" name="epic" value="on"><br>
+                <label for="epic">epic</label>
+                <input type="hidden" name="epic" value="">
+                <input type="checkbox" id="epic" name="epic" value="on"><br>
 
-                    <label for="mythic">mythic</label>
-                    <input type="hidden" name="mythic" value="">
-                    <input type="checkbox" id="mythic" name="mythic" value="on"><br>
+                <label for="mythic">mythic</label>
+                <input type="hidden" name="mythic" value="">
+                <input type="checkbox" id="mythic" name="mythic" value="on"><br>
 
-                    <label for="legendary">legendary</label>
-                    <input type="hidden" name="legendary" value="">
-                    <input type="checkbox" id="legendary" name="legendary" value="on"><br>
-                </div>
-                <label for="nft_brawler_classes">Классы нфт как бравлера</label>
-                <div id="nft_brawler_classes">
-                    <label for="healer">healer</label>
-                    <input type="hidden" name="healer" value="">
-                    <input type="checkbox" id="healer" name="healer" value="on"><br>
+                <label for="legendary">legendary</label>
+                <input type="hidden" name="legendary" value="">
+                <input type="checkbox" id="legendary" name="legendary" value="on"><br>
+            </div>
+            <label for="nft_brawler_classes">Классы нфт как бравлера</label>
+            <div id="nft_brawler_classes">
+                <label for="healer">healer</label>
+                <input type="hidden" name="healer" value="">
+                <input type="checkbox" id="healer" name="healer" value="on"><br>
 
-                    <label for="sniper">sniper</label>
-                    <input type="hidden" name="sniper" value="">
-                    <input type="checkbox" id="sniper" name="sniper" value="on"><br>
+                <label for="sniper">sniper</label>
+                <input type="hidden" name="sniper" value="">
+                <input type="checkbox" id="sniper" name="sniper" value="on"><br>
 
-                    <label for="damage_dealer">damage_dealer</label>
-                    <input type="hidden" name="damage_dealer" value="">
-                    <input type="checkbox" id="damage_dealer" name="damage_dealer" value="on"><br>
+                <label for="damage_dealer">damage_dealer</label>
+                <input type="hidden" name="damage_dealer" value="">
+                <input type="checkbox" id="damage_dealer" name="damage_dealer" value="on"><br>
 
-                    <label for="tank">tank</label>
-                    <input type="hidden" name="tank" value="">
-                    <input type="checkbox" id="tank" name="tank" value="on"><br>
-                </div>`;
-            container.appendChild(newNft);
-        }
+                <label for="tank">tank</label>
+                <input type="hidden" name="tank" value="">
+                <input type="checkbox" id="tank" name="tank" value="on"><br>
+            </div>`;
+        container.appendChild(newNft);
+    }
 
-        document.getElementById('collection-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
+    document.getElementById('collection-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
 
-            const formData = new FormData(this);
+        const formData = new FormData(this);
 
-            try {
-                const response = await fetch('/api/collections', {
-                    method: 'POST',
-                    body: formData
-                });
+        try {
+            const response = await fetch('/api/collections', {
+                method: 'POST',
+                body: formData
+            });
 
-                if (!response.ok) {
-                    throw new Error('Ошибка при добавлении коллекции');
-                }
-
-                const result = await response.json();
-                alert('Коллекция успешно добавлена!');
-            } catch (error) {
-                console.error(error);
-                alert('Произошла ошибка: ' + error.message);
+            if (!response.ok) {
+                throw new Error('Ошибка при добавлении коллекции');
             }
-        });
-    </script>
+
+            const result = await response.json();
+            alert('Коллекция успешно добавлена!');
+        } catch (error) {
+            console.error(error);
+            alert('Произошла ошибка: ' + error.message);
+        }
+    });
+</script>
 </body>
 </html>

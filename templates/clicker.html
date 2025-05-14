@@ -1,46 +1,141 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Clicker</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clicker</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  .container {
+    text-align: center;
+    background-color: #fff;
+    padding: 40px 20px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+  }
+
+  /* Стиль кнопки */
+  #click-button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    outline: none;
+    display: inline-block;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  #click-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  /* Анимация для изображения при нажатии */
+  @keyframes clickAnimation {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  /* Стиль изображения */
+  #click-image {
+    width:300px;
+    height:auto;
+    border-radius:15px;
+    transition: box-shadow 0.3s, filter 0.3s;
+  }
+
+  /* Эффект при нажатии */
+</style>
 </head>
 <body>
-    <div style="text-align:center;">
-        <h1>{{ collection.name }}</h1>
 
-        <button id="click-button" style="border:none; background:none; padding:0; cursor:pointer;">
-            <img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" style="width:300px; height:auto;" />
-        </button>
+<div class="container">
+<h1>{{ collection.name }}</h1>
 
-        <h2>Счетчик нажатий: <span id="click-count">{{ current_user.click_count or 0 }}</span></h2>
-    </div>
+<button id="click-button">
+<img src="{{ url_for('uploaded_file', filename=collection.image_path) }}" alt="{{ collection.name }}" id="click-image" />
+</button>
+
+<h2>Счетчик нажатий: <span id="click-count">{{ current_user.click_count or 0 }}</span></h2>
+</div>
 
 <script>
-document.getElementById('click-button').addEventListener('click', () => {
-    fetch(`/api/clicker/{{ collection.id }}/click/{{ current_user.id }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Ошибка сети');
-        return response.json();
-    })
-    .then(data => {
-        if (data.click_count !== undefined) {
-            document.getElementById('click-count').textContent = data.click_count;
-        }
-        if (data.nft_received) {
-            alert(`Поздравляем! Вы получили NFT:\n${data.nft_received.name} (${data.nft_received.rarity})`);
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Произошла ошибка при отправке клика.');
-    });
+const button = document.getElementById('click-button');
+const clickCountSpan = document.getElementById('click-count');
+const image = document.getElementById('click-image');
+
+button.addEventListener('click', () => {
+
+   // Запускаем анимацию "пульсации" изображения
+   image.style.animation = 'clickAnimation .3s ease';
+
+   // Удаляем анимацию после завершения для повторных запусков
+   image.addEventListener('animationend', () => {
+     image.style.animation = '';
+   }, { once:true });
+
+   // Отправляем запрос
+   fetch(`/api/clicker/{{ collection.id }}/click/{{ current_user.id }}`, {
+       method:'POST',
+       headers:{'Content-Type':'application/json'}
+   })
+   .then(res => {
+       if (!res.ok) throw new Error('Ошибка сети');
+       return res.json();
+   })
+   .then(data => {
+       if (data.click_count !== undefined) {
+           // Плавное изменение числа
+           const currentCount = parseInt(clickCountSpan.textContent);
+           const newCount = data.click_count;
+
+           // Анимация изменения числа
+           animateNumber(currentCount, newCount);
+       }
+       if (data.nft_received) {
+           alert(`🎉 Поздравляем! Вы получили NFT:\n${data.nft_received.name} (${data.nft_received.rarity})`);
+       }
+   })
+   .catch(error => {
+       console.error('Ошибка:', error);
+       alert('Произошла ошибка при отправке клика.');
+   });
 });
+
+// Функция плавного изменения числа
+function animateNumber(start, end) {
+   const duration =300; // ms
+   const startTime = performance.now();
+
+   function update(currentTime) {
+     const elapsed = currentTime - startTime;
+     const progress = Math.min(elapsed / duration,1);
+     const currentNumber = Math.round(start + (end - start) * progress);
+     clickCountSpan.textContent = currentNumber;
+
+     if (progress <1) {
+       requestAnimationFrame(update);
+     }
+   }
+
+   requestAnimationFrame(update);
+}
 </script>
 
 </body>
