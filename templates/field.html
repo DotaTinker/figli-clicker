@@ -34,27 +34,6 @@
         </style>
     </head>
     <body>
-        <div class="container text-center">
-            <div class="row">
-                <div class="col">
-                1 of 2
-                </div>
-                <div class="col">
-                2 of 2
-                </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                1 of 3
-                </div>
-                <div class="col">
-                2 of 3
-                </div>
-                <div class="col">
-                3 of 3
-                </div>
-            </div>
-        </div>
         <div class="container">
             {% for y in range(10) %}
                 <table>
@@ -62,11 +41,19 @@
                         {% if field[y][x] %}
                             {% set json = field[y][x][y|string + ' ' + x|string] %}
                             {% set path = json["path"] %}
-                            <h1>{{ path }}</h1>
-                            <td>
-                                <img src="{{ url_for('uploaded_file', filename=path) }}">
-                                <div class="caption">{{ json["current_xp"] }}</div>
-                            </td>
+                            {% if json["next"] %}
+                                <td>
+                                    <div style="border: solid 3px; border-color: blue;">
+                                        <img src="{{ url_for('uploaded_file', filename=path) }}">
+                                        <div class="caption">{{ json["current_xp"] }}</div>
+                                    </div>
+                                </td>
+                            {% else %}
+                                <td>
+                                    <img src="{{ url_for('uploaded_file', filename=path) }}">
+                                    <div class="caption">{{ json["current_xp"] }}</div>
+                                </td>
+                            {% endif %}
                         {% else %}
                             <td>
                                 <img width="100px" height="100px" src="static/img/null.png" alt="должна быть пустота">

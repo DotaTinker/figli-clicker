@@ -141,9 +141,8 @@ def chance_rarity_as_brawler_changer(_rarity, percents, strike):
 
 
 class BaseBrawler:
-    def __init__(self, rarity, team, x, y, collection_id, file_name):
+    def __init__(self, rarity, team, x, y):
         self.team = team
-        self.path = f"{collection_id}/nfts/{file_name}"
         self.x = x
         self.y = y
         self.rarity = rarity
@@ -252,7 +251,6 @@ class BaseBrawler:
             "extra_strike": self.extra_damage_strike,
             "xp_list": self.xps,
             "attack_list": self.last_amounts,
-            "path": self.path
         }
 
 
@@ -683,23 +681,28 @@ class FieldTest:
                     row.append("-")
             print(row)
 
-"""def ff(f, ll):
+def ff(f, ll):
     for y in range(10):
         for x in range(10):
             if ll[y][x]:
                 team = "blue" if ll[y][x][1] == 'b' else "red"
+                r = ll[y][x][2]
+                if r == 'r':
+                    rr = "rare"
+                elif r == 's':
+                    rr = 'super_rare'
                 if ll[y][x][0] == 's':
-                    f.add_brawler(Sniper("rare", team, x, y))
+                    f.add_brawler(Sniper("epic", team, x, y))
                 if ll[y][x][0] == 'd':
-                    f.add_brawler(DamageDealer("legendary", team, x, y))
+                    f.add_brawler(DamageDealer("epic", team, x, y))
                 if ll[y][x][0] == 't':
-                    f.add_brawler(Tank("legendary", team, x, y))
+                    f.add_brawler(Tank("epic", team, x, y))
                 if ll[y][x][0] == 'h':
                     f.add_brawler(Healer("epic", team, x, y))
 
 
-matrix = [
-    ['dr', 0, 0, 0, 0, 0, 0, 0, 0, 0],
+matrix = matrix = [
+    ['dr', 'tr', 'dr', 'hr', 'sr', 'dr', 'tr', 'hr', 'dr', 'sr'],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -708,7 +711,7 @@ matrix = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ['db', 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ['sr', 'dr', 'hr', 'tr', 'dr', 'sr', 'dr', 'sr', 'dr', 'sr']
 ]
 f = Field("blue")
 ff(f, matrix)
@@ -723,9 +726,10 @@ if not f_json["winner"]:
             print(f_json["winner"])
             break
         pprint.pprint(f.json())
-        f.print_field()"""
+        f.print_field()
+        wait(5000)
 
-from flask import Flask, render_template
+"""from flask import Flask, render_template
 app = Flask(__name__)
 
 
@@ -757,4 +761,4 @@ def table():
     return render_template("field.html", field=field)
 
 if __name__ == "__main__":
-    app.run(port=8080, host='127.0.0.1')
+    app.run(port=8080, host='127.0.0.1')"""
