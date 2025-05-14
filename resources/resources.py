@@ -189,7 +189,15 @@ class CollectionListResource(Resource):
             ds = norm_list(request.form.getlist("damage_dealer"))
             ts = norm_list(request.form.getlist("tank"))
             pprint.pprint([rs, srs, es, ms, ls, hs, ss, ds, ts])
-            default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
+            all_col = db_sess.query(Collection).all()
+            if all_col:
+                last_col = all_col[-1]
+                allnfts =  db_sess.query(NFT).filter(NFT.collection_id == last_col.id).all()
+                default_nft_id = allnfts[-1].id + 1
+            else:
+                default_nft_id = 1
+
+            # default_nft_id = db_sess.query(NFT).filter(NFT.collection_id == int(new_collection_id)).count() + 1
             for nft_name, nft_rarity, nft_image, r, sr, e, m, l, h, s, d, t in zip(nft_names, nft_rarities, nft_images,
                                                                                    rs, srs, es, ms, ls, hs, ss, ds, ts):
                 if not allowed_file(nft_image.filename):

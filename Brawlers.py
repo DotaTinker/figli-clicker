@@ -141,9 +141,9 @@ def chance_rarity_as_brawler_changer(_rarity, percents, strike):
 
 
 class BaseBrawler:
-    def __init__(self, rarity, team, x, y, file_name, collection_id):
+    def __init__(self, rarity, team, x, y, collection_id, file_name):
         self.team = team
-        self.path = f"collections_and_nfts/{collection_id}/nfts/{file_name}"
+        self.path = f"{collection_id}/nfts/{file_name}"
         self.x = x
         self.y = y
         self.rarity = rarity
