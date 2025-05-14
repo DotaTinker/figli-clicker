@@ -1,3 +1,5 @@
+import os
+import pprint
 import random
 import math
 from pygame.time import wait
@@ -139,8 +141,9 @@ def chance_rarity_as_brawler_changer(_rarity, percents, strike):
 
 
 class BaseBrawler:
-    def __init__(self, rarity, team, x, y):
+    def __init__(self, rarity, team, x, y, file_name, collection_id):
         self.team = team
+        self.path = f"collections_and_nfts/{collection_id}/nfts/{file_name}"
         self.x = x
         self.y = y
         self.rarity = rarity
@@ -238,6 +241,19 @@ class BaseBrawler:
         else:
             self.xp += amount
         self.xps.append(self.xp)
+
+    def json(self):
+        return {
+            "team": self.team,
+            "rarity": self.rarity,
+            "max_xp": self.xp_limit,
+            "current_xp": self.xp,
+            "extra_chance": self.extra_damage_chance,
+            "extra_strike": self.extra_damage_strike,
+            "xp_list": self.xps,
+            "attack_list": self.last_amounts,
+            "path": self.path
+        }
 
 
 class DamageDealer(BaseBrawler):
@@ -524,17 +540,6 @@ class Healer(BaseBrawler):
             self.motion(field)
         self.attack(field)
 
-    def json(self):
-        return {
-            "team": self.team,
-            "rarity": self.rarity,
-            "max_xp": self.xp_limit,
-            "current_xp": self.xp,
-            "extra_chance": self.extra_damage_chance,
-            "extra_strike": self.extra_damage_strike,
-            "xp_list": self.xps,
-            "attack_list": self.last_amounts
-        }
 
 class Field:
     def __init__(self, first):
@@ -585,26 +590,29 @@ class Field:
 
         self.cur_b, self.c_b = len(self.blue_list), len(self.blue_list)
         self.cur_r, self.c_r = len(self.red_list), len(self.red_list)
+        self.change_team_lists()
 
     def step(self):
-        team = self.team_list[self.cursor_teams % 2]
-        if team == "blue":
-            self.blue_list[self.cur_b % self.c_b].step(self)
-            self.cur_b += 1
+        if self.blue_list or self.red_list:
+            team = self.team_list[self.cursor_teams % 2]
+            if team == "blue":
+                self.blue_list[self.cur_b % self.c_b].step(self)
+                self.cur_b += 1
+            else:
+                self.red_list[self.cur_r % self.c_r].step(self)
+                self.cur_r += 1
+            self.cursor_teams += 1
         else:
-            self.red_list[self.cur_r % self.c_r].step(self)
-            self.cur_r += 1
-        self.cursor_teams += 1
+            self.winner = "ничья"
 
     def next_step(self):
-        team = self.team_list[self.cursor_teams % 2]
-        try:
+        if self.red_list or self.blue_list:
+            team = self.team_list[self.cursor_teams % 2]
             if team == "blue":
                 return (self.blue_list[self.cur_b % self.c_b].y, self.blue_list[self.cur_b % self.c_b].x)
             return (self.red_list[self.cur_r % self.c_r].y, self.red_list[self.cur_r % self.c_r].x)
-        except ZeroDivisionError:
-            pass
-
+        else:
+            self.winner = "ничья"
 
     def kill(self, x, y):
         brawler = self.field[y][x]
@@ -627,23 +635,32 @@ class Field:
             self.cur_r = len(self.red_list) * (self.cur_r // self.c_r) + self.cur_r % self.c_r + a
             self.c_r = len(self.red_list)
         self.field[y][x] = 0
+        self.change_team_lists()
+        if not self.blue_list and not self.red_list:
+            self.winner = "ничья"
 
+    def change_team_lists(self):
         if not self.blue_list:
             self.team_list = ["red", "red"]
         if not self.red_list:
             self.team_list = ["blue", "blue"]
 
     def json(self):
-        a = {}
-        for y in range(10):
-            for x in range(10):
-                if self.field[y][x]:
-                    y_x_next = self.next_step()
-                    if y_x_next:
+        a = {"winner": self.winner}
+        y_x_next = self.next_step()
+        if y_x_next:
+            for y in range(10):
+                for x in range(10):
+                    if self.field[y][x]:
                         if y == y_x_next[0] and x == y_x_next[1]:
-                            a[[str(y), str(x)], True] = self.field[y][x].json()
-                    else:
-                        a[[str(y), str(x)], False] = self.field[y][x].json()
+                            br_json =  self.field[y][x].json()
+                            br_json["next"] = True
+                            a[f"{y} {x}"] = br_json
+                        else:
+                            br_json = self.field[y][x].json()
+                            br_json["next"] = True
+                            a[f"{y} {x}"] = br_json
+        return a
 
 class FieldTest:
     def __init__(self):
@@ -666,3 +683,78 @@ class FieldTest:
                     row.append("-")
             print(row)
 
+"""def ff(f, ll):
+    for y in range(10):
+        for x in range(10):
+            if ll[y][x]:
+                team = "blue" if ll[y][x][1] == 'b' else "red"
+                if ll[y][x][0] == 's':
+                    f.add_brawler(Sniper("rare", team, x, y))
+                if ll[y][x][0] == 'd':
+                    f.add_brawler(DamageDealer("legendary", team, x, y))
+                if ll[y][x][0] == 't':
+                    f.add_brawler(Tank("legendary", team, x, y))
+                if ll[y][x][0] == 'h':
+                    f.add_brawler(Healer("epic", team, x, y))
+
+
+matrix = [
+    ['dr', 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ['db', 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
+f = Field("blue")
+ff(f, matrix)
+f.create_team_lists()
+f_json = f.json()
+pprint.pprint(f_json)
+if not f_json["winner"]:
+    while True:
+        f.step()
+        f_json = f.json()
+        if f_json["winner"]:
+            print(f_json["winner"])
+            break
+        pprint.pprint(f.json())
+        f.print_field()"""
+
+from flask import Flask, render_template
+app = Flask(__name__)
+
+
+@app.route("/")
+def table():
+    json = {'0 0': {'attack_list': [['2568.0', ['']], ['2525.2', ['']]],
+             'current_xp': 1280.0,
+             'extra_chance': {'': 95.8, 'extra': 4.2},
+             'extra_strike': {'': 0, 'extra': 2},
+             'max_xp': 3800,
+             'next': True,
+             'rarity': 'legendary',
+             'team': 'blue',
+             'xp_list': [1280.0],
+             'path': "/1/nfts/1.png"},
+        'winner': ''}
+    field = [
+        [json, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    print(os.getcwd())
+    return render_template("field.html", field=field)
+
+if __name__ == "__main__":
+    app.run(port=8080, host='127.0.0.1')
