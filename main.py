@@ -51,6 +51,33 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
+@app.route("/123")
+def table():
+    json = {'0 0': {'attack_list': [['2568.0', ['']], ['2525.2', ['']]],
+             'current_xp': 1280.0,
+             'extra_chance': {'': 95.8, 'extra': 4.2},
+             'extra_strike': {'': 0, 'extra': 2},
+             'max_xp': 3800,
+             'next': True,
+             'rarity': 'legendary',
+             'team': 'blue',
+             'xp_list': [1280.0],
+             'path': "1/nfts/1.png"},
+        'winner': ''}
+    field = [
+        [json, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    return render_template("field.html", field=field)
+
+
 def admin_required(f):  # декоратор недопускающий людей без прав администратора
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
