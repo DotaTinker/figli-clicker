@@ -232,6 +232,7 @@ def profile(user_id):
             nft = db_sess.query(NFT).filter(NFT.id == int(i)).first()
             if nft:
                 path = f"{nft.collection_id}/nfts/{nft.image_path}"
+                print(path)
                 list_of_lists.append([path, nft.name, nft.rarity, j["rarity"], j["brawler"]])
 
     return render_template("profile.html", user_id=user_id, list=list_of_lists)
