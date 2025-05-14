@@ -288,29 +288,52 @@ class ClickerResource(Resource):
             response_data = None
 
             if _rarity:
+                nfts = db_sess.query(NFT).all()
+                this_rarity_nfts = []
+                for nft in nfts:
+                    if nft.rarity == _rarity:
+                        this_rarity_nfts.append(nft)
+                if not this_rarity_nfts:
+                    fl = False
+                else:
+                    fl = True
                 rarity_percents_br = {"rare": user.rare_br, "super_rare": user.super_rare_br, "epic": user.epic_br,
                                       "mythic": user.mythic_br, "legendary": user.legendary_br}
                 rarity_strike_br = {"rare": user.rare_s_br, "super_rare": user.super_rare_s_br, "epic": user.epic_s_br,
                                     "mythic": user.mythic_s_br, "legendary": user.legendary_s_br}
 
-                i_cant_be_r = []
-                while True:
+                i_cant_be_r = set()
+                while fl:
+                    if len(i_cant_be_r) == 5:
+                        print("длинна больше 5")
+                        break
+                    print("заход в цикл с выбором редкости, i_cant_be_r:", i_cant_be_r)
                     _rarity_as_br = \
                         random.choices(list(rarity_percents_br.keys()), weights=list(rarity_percents_br.values()))[0]
+                    print('р как бравлера', _rarity_as_br)
                     if _rarity_as_br in i_cant_be_r:
+                        print("редкость в i cant be r")
                         continue
-                    this_rarity_rarity_nfts = db_sess.query(NFT).filter(NFT.rarity == _rarity,
-                                                                        NFT.collection_id == collection_id,
-                                                                        NFT.rarities_as_brawler.like(
-                                                                            f"%{_rarity_as_br}%")).all()
-                    if len(i_cant_be_r) == 5:
-                        break
+                    nfts = db_sess.query(NFT).all()
+                    this_rarity_rarity_nfts = []
+                    print("нфт, подходящие к этой редкости:")
+                    for nft in nfts:
+                        if nft.rarity == _rarity:
+                            if nft.collection_id == collection_id:
+                                print(_rarity_as_br, nft.rarities_as_brawler)
+                                if _rarity_as_br in nft.rarities_as_brawler:
+                                    this_rarity_rarity_nfts.append(nft)
+                                    print(nft)
+
                     if not this_rarity_rarity_nfts:
-                        i_cant_be_r.append(_rarity)
+                        print("таких нфт нет, наша редкость в icant be r")
+                        i_cant_be_r.add(_rarity_as_br)
                         continue
+                    print("первое прошло успешно")
                     rarity_percents_br, rarity_strike_br = Brawlers.chance_rarity_as_brawler_changer(_rarity_as_br,
                                                                                                      rarity_percents_br,
                                                                                                      rarity_strike_br)
+
                     user.BRAWLER_r_s(rarity_percents_br, rarity_strike_br, db_sess)
                     classes_percent = {"healer": user.healer, "damage_dealer": user.damage_dealer,
                                        "sniper": user.sniper,
@@ -318,24 +341,37 @@ class ClickerResource(Resource):
                     classes_strike = {"healer": user.healer_s, "damage_dealer": user.damage_dealer_s,
                                       "sniper": user.sniper_s,
                                       "tank": user.tank_s}
-                    i_cant_be_c = []
+                    i_cant_be_c = set()
                     while True:
+                        if len(i_cant_be_c) == 4:
+                            print("длинна больше 4")
+                            break
+                        print("заход в цикл с Классом, i_cant_be_c:", i_cant_be_c)
                         _class = random.choices(list(classes_percent.keys()), weights=list(classes_percent.values()))[0]
+                        print("наш класс", _class)
                         if _class in i_cant_be_c:
+                            print("наш класс в icantbec" )
                             continue
                         this_rarity_rarity_class_nfts = list(
                             filter(lambda _nft: _class in _nft.classes_as_brawler, this_rarity_rarity_nfts))
+                        print("нфт с подх нам классом", this_rarity_rarity_class_nfts)
                         if not this_rarity_rarity_class_nfts:
-                            i_cant_be_c.append(_class)
+                            i_cant_be_c.add(_class)
+                            print("таких нфт нет, наш класс в icant be с")
                             continue
-                        if len(i_cant_be_c) == 4:
-                            break
+
+                        print("успешно")
                         classes_percent, classes_strike = Brawlers.chance_class_changer(_class, classes_percent,
                                                                                         classes_strike)
                         user.CLASS_r_s(classes_percent, classes_strike, db_sess)
                         _nft_ = random.choices(this_rarity_rarity_class_nfts)[0]
-                        inventory_path = f".users_json/{user.email}.json"
+                        inventory_path = f"users_jsons/{user.email}.json"
+                        print(inventory_path)
+                        if not os.path.exists("users_jsons/"):
+                            print("!!!")
+                            os.mkdir("users_jsons/")
                         if os.path.exists(inventory_path):
+                            print("exist")
                             with open(inventory_path, "r", encoding="utf8") as user_json:
                                 inventory_data = json.load(user_json)
                         else:
@@ -343,8 +379,11 @@ class ClickerResource(Resource):
                         this_nft_id_list = inventory_data.get(str(_nft_.id), [])
                         this_nft_id_list.append({"rarity": _rarity_as_br, "brawler": _class})
                         inventory_data[str(_nft_.id)] = this_nft_id_list
+                        print(1)
                         with open(inventory_path, "w") as user_json:
+                            print(1)
                             json.dump(inventory_data, user_json)
+                            print(1)
                         response_data = {'click_count': user.click_count,
                                          'nft_received': {
                                              "id": _nft_.id,
@@ -353,7 +392,7 @@ class ClickerResource(Resource):
                         break
                     break
             db_sess.close()
-            return {"click_count": click, "response_data": None}, 200
+            return {"click_count": click, "response_data": response_data}, 200
         except Exception as e:
             print(e)
 

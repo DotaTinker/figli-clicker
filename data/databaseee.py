@@ -211,6 +211,9 @@ class NFT(SqlAlchemyBase):
             return {key: data[key] for key in only if key in data}
         return data
 
+    def __repr__(self):
+        return f"""редкость - {self.rarity}|| как бравлер - "{self.rarities_as_brawler}", классы || "{self.classes_as_brawler}" """
+
 
 class TradeRequests(SqlAlchemyBase):
     """Тут храгятся все запросы на торговлю от игроков"""
