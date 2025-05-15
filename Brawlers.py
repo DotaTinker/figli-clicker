@@ -700,7 +700,7 @@ def ff(f, ll):
                 if ll[y][x][0] == 'h':
                     f.add_brawler(Healer("epic", team, x, y))
 
-
+"""
 matrix = matrix = [
     ['dr', 'tr', 'dr', 'hr', 'sr', 'dr', 'tr', 'hr', 'dr', 'sr'],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -728,6 +728,7 @@ if not f_json["winner"]:
         pprint.pprint(f.json())
         f.print_field()
         wait(5000)
+"""
 
 """from flask import Flask, render_template
 app = Flask(__name__)
